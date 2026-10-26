@@ -1,0 +1,69 @@
+import type { BlendPreset, FlourSplit, SafetyWarning, Servings } from '../types';
+
+export const FLOUR_STEP_G = 50;
+export const FLOUR_MIN_G = 200;
+export const FLOUR_MAX_G = 600;
+export const FLOUR_PRESETS_G = [200, 250, 300, 350, 400, 450, 500, 600];
+
+export const HYDRATION_DEFAULT = 0.38;
+export const HYDRATION_MIN = 0.36;
+export const HYDRATION_MAX = 0.4;
+
+export const WASTE_DEFAULT_G = 30;
+export const WASTE_MIN_G = 20;
+export const WASTE_MAX_G = 45;
+
+export const ADULT_PORTION_G = 150;
+export const KID_PORTION_G = 90;
+/** 100g dry flour yields ~150g fresh pasta */
+export const FRESH_PER_FLOUR = 1.5;
+
+export const RED_GUMMY_LIMIT_PCT = 70;
+
+export const BLEND_PRESETS: BlendPreset[] = [
+  { id: 'balanced', label: 'Balanced (50/50)', yellowPct: 50 },
+  { id: 'kids-soft', label: 'Kids Soft', yellowPct: 37.5 },
+  { id: 'al-dente', label: 'Traditional Al-Dente', yellowPct: 70 },
+];
+
+export const clamp = (value: number, min: number, max: number): number =>
+  Math.min(max, Math.max(min, value));
+
+/** Snap arbitrary flour input (e.g. 371g) to the nearest valid 50g batch. */
+export function snapFlour(grams: number): number {
+  if (!Number.isFinite(grams)) return FLOUR_MIN_G;
+  return clamp(Math.round(grams / FLOUR_STEP_G) * FLOUR_STEP_G, FLOUR_MIN_G, FLOUR_MAX_G);
+}
+
+/** Total Liquid (g) = Flour (g) × Hydration, rounded to the gram. */
+export function liquidTarget(flourG: number, hydration: number): number {
+  return Math.round(flourG * hydration);
+}
+
+/** Water to Add = Liquid Target − Actual Egg Weight. */
+export function waterToAdd(liquidTargetG: number, eggG: number): number {
+  return liquidTargetG - Math.round(eggG);
+}
+
+export function splitFlour(flourG: number, yellowPct: number): FlourSplit {
+  const yellowG = Math.round((flourG * yellowPct) / 100);
+  return { yellowG, redG: flourG - yellowG };
+}
+
+/**
+ * Required Output = Adults×150 + Kids×90 + Waste, converted to dry flour
+ * and rounded UP to the next 50g batch. May exceed FLOUR_MAX_G — caller
+ * should prompt for multiple batches in that case.
+ */
+export function flourForServings({ adults, kids, wasteG }: Servings): number {
+  const requiredOutputG = adults * ADULT_PORTION_G + kids * KID_PORTION_G + wasteG;
+  const flourG = requiredOutputG / FRESH_PER_FLOUR;
+  return Math.max(FLOUR_MIN_G, Math.ceil(flourG / FLOUR_STEP_G) * FLOUR_STEP_G);
+}
+
+export function safetyWarnings(yellowPct: number, eggG: number): SafetyWarning[] {
+  const warnings: SafetyWarning[] = [];
+  if (100 - yellowPct > RED_GUMMY_LIMIT_PCT) warnings.push('red-gummy');
+  if (yellowPct === 100 && eggG <= 0) warnings.push('yellow-brittle');
+  return warnings;
+}
