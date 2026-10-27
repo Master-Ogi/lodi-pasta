@@ -1,26 +1,23 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { AlertTriangle, Droplets, RotateCcw, Scale, SlidersHorizontal, Sparkles, Users } from 'lucide-react';
+import { AlertTriangle, CircleDot, Droplets, RotateCcw, Scale, SlidersHorizontal, Sparkles, Timer, Users } from 'lucide-react';
 import { usePastaCalculator } from '../hooks/usePastaCalculator';
+import { usePantry } from '../hooks/usePantry';
+import { useTranslation } from '../i18n';
 import {
   FLOUR_MAX_G,
   FLOUR_PRESETS_G,
   HYDRATION_MAX,
   HYDRATION_MIN,
   HYDRATION_STEP,
-  WASTE_MAX_G,
-  WASTE_MIN_G,
   hydrationFeel,
   isGoldenSpot,
   snapFlour,
 } from '../utils/math';
-import type { SafetyWarning } from '../types';
+import { BOIL_MINUTES, DISCS } from '../data/discs';
+import type { Disc } from '../types';
 import FlourRatioSlider from './FlourRatioSlider';
 import ColorFlavorDrawer from './ColorFlavorDrawer';
-
-const WARNING_TEXT: Record<SafetyWarning, string> = {
-  'red-gummy': 'Red (Tipo 00) above 70% — gummy extrusion risk.',
-  'yellow-brittle': '100% Yellow without egg — brittle extrusion risk.',
-};
+import FlourPantryDrawer from './FlourPantryDrawer';
 
 function Section({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
   return (
@@ -35,6 +32,7 @@ function Section({ icon, title, children }: { icon: ReactNode; title: string; ch
 }
 
 function Stepper({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center justify-between">
       <span className="text-zinc-300">{label}</span>
@@ -43,16 +41,16 @@ function Stepper({ label, value, onChange }: { label: string; value: number; onC
           type="button"
           onClick={() => onChange(value - 1)}
           className="h-9 w-9 rounded-lg bg-zinc-800 text-lg hover:bg-zinc-700"
-          aria-label={`Fewer ${label}`}
+          aria-label={t.calc.fewer(label)}
         >
           −
         </button>
-        <span className="w-6 text-center text-lg font-semibold tabular-nums">{value}</span>
+        <span className="w-6 text-center text-lg font-semibold tabular-nums">{t.num(value)}</span>
         <button
           type="button"
           onClick={() => onChange(value + 1)}
           className="h-9 w-9 rounded-lg bg-zinc-800 text-lg hover:bg-zinc-700"
-          aria-label={`More ${label}`}
+          aria-label={t.calc.more(label)}
         >
           +
         </button>
@@ -61,7 +59,14 @@ function Stepper({ label, value, onChange }: { label: string; value: number; onC
   );
 }
 
-export default function Calculator() {
+interface Props {
+  disc: Disc;
+  onDiscChange: (disc: Disc) => void;
+}
+
+export default function Calculator({ disc, onDiscChange }: Props) {
+  const { t } = useTranslation();
+  const { defaultYellow, defaultRed } = usePantry();
   const {
     state,
     result,
@@ -85,76 +90,67 @@ export default function Calculator() {
 
   const [fineTune, setFineTune] = useState(false);
   const golden = isGoldenSpot(state.hydration);
-  const feel = hydrationFeel(state.hydration);
+  const feel = t.calc.feel[hydrationFeel(state.hydration)];
 
   const { waterToAddG } = result;
   const servingsTooLarge = result.servingsFlourG > FLOUR_MAX_G;
+  const [boilMin, boilMax] = BOIL_MINUTES[disc];
 
   return (
     <div className="space-y-4">
-      <Section icon={<Users size={16} />} title="Servings">
+      <Section icon={<Users size={16} />} title={t.calc.servings}>
         <div className="space-y-3">
-          <Stepper label="Adults" value={state.servings.adults} onChange={(adults) => setServings({ adults })} />
-          <Stepper label="Kids" value={state.servings.kids} onChange={(kids) => setServings({ kids })} />
-          <label className="flex items-center justify-between">
-            <span className="text-zinc-300">Waste allowance (פחת)</span>
-            <span className="flex items-center gap-2">
-              <input
-                type="range"
-                min={WASTE_MIN_G}
-                max={WASTE_MAX_G}
-                value={state.servings.wasteG}
-                onChange={(e) => setServings({ wasteG: Number(e.target.value) })}
-                className="w-24 accent-amber-400"
-              />
-              <span className="w-10 text-right tabular-nums">{state.servings.wasteG}g</span>
-            </span>
-          </label>
+          <Stepper label={t.calc.adults} value={state.servings.adults} onChange={(adults) => setServings({ adults })} />
+          <Stepper label={t.calc.kids} value={state.servings.kids} onChange={(kids) => setServings({ kids })} />
+          <p className="text-xs text-zinc-500">{t.calc.servingsHint}</p>
           <button
             type="button"
             onClick={applyServings}
             className="w-full rounded-lg bg-amber-400 py-2.5 font-semibold text-zinc-950 hover:bg-amber-300"
           >
-            Use {Math.min(result.servingsFlourG, FLOUR_MAX_G)}g flour
+            {t.calc.useFlour(Math.min(result.servingsFlourG, FLOUR_MAX_G))}
           </button>
-          {servingsTooLarge && (
-            <p className="text-sm text-amber-300">
-              Needs {result.servingsFlourG}g — above the {FLOUR_MAX_G}g max. Split into multiple batches.
-            </p>
-          )}
+          {servingsTooLarge && <p className="text-sm text-amber-300">{t.calc.tooLarge(result.servingsFlourG, FLOUR_MAX_G)}</p>}
         </div>
       </Section>
 
-      <Section icon={<Scale size={16} />} title="Flour">
+      <Section icon={<Scale size={16} />} title={t.calc.flour}>
         <div className="space-y-3">
           <div className="flex items-baseline gap-2">
             <input
               type="number"
               inputMode="numeric"
+              dir="ltr"
               value={flourDraft}
               onChange={(e) => setFlourDraft(e.target.value)}
               onBlur={commitFlour}
               onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-              aria-label="Total flour in grams"
+              aria-label={t.calc.flourAria}
               className="w-28 rounded-lg bg-zinc-800 px-3 py-2 text-3xl font-semibold tabular-nums outline-none focus:ring-2 focus:ring-amber-400"
             />
-            <span className="text-xl text-zinc-400">g</span>
+            <span className="text-xl text-zinc-400">{t.units.g(0)}</span>
           </div>
           <div className="flex flex-wrap gap-2">
-            {FLOUR_PRESETS_G.map((g) => (
+            {FLOUR_PRESETS_G.map((grams) => (
               <button
-                key={g}
+                key={grams}
                 type="button"
-                onClick={() => setFlour(g)}
+                onClick={() => setFlour(grams)}
                 className={`rounded-lg px-3 py-1.5 text-sm tabular-nums ${
-                  state.flourG === g ? 'bg-amber-400 text-zinc-950' : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                  state.flourG === grams ? 'bg-amber-400 text-zinc-950' : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
                 }`}
               >
-                {g}
+                {t.num(grams)}
               </button>
             ))}
           </div>
-          <FlourRatioSlider yellowPct={state.yellowPct} split={result.split} onChange={setYellowPct} />
+          <FlourRatioSlider
+            yellowPct={state.yellowPct}
+            split={result.split}
+            yellowName={defaultYellow?.name ?? t.calc.yellowFallback}
+            redName={defaultRed?.name ?? t.calc.redFallback}
+            onChange={setYellowPct}
+          />
         </div>
       </Section>
 
@@ -167,28 +163,30 @@ export default function Calculator() {
               className="flex items-center gap-2 rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-200"
             >
               <AlertTriangle size={18} className="shrink-0" />
-              {WARNING_TEXT[w]}
+              {t.calc.warnings[w]}
             </div>
           ))}
         </div>
       )}
 
-      <ColorFlavorDrawer flourG={state.flourG} />
+      <FlourPantryDrawer />
 
-      <Section icon={<Droplets size={16} />} title="Liquid & Scale">
+      <ColorFlavorDrawer flourG={state.flourG} waterG={state.eggG > 0 ? Math.max(0, waterToAddG) : result.liquidTargetG} />
+
+      <Section icon={<Droplets size={16} />} title={t.calc.liquid}>
         <div className="space-y-4">
           <div className="text-center">
-            <div className="text-sm text-zinc-400">Total liquid (egg + water)</div>
-            <div className="text-6xl font-bold tabular-nums text-amber-400">{result.liquidTargetG}g</div>
+            <div className="text-sm text-zinc-400">{t.calc.totalLiquid}</div>
+            <div className="text-6xl font-bold tabular-nums text-amber-400">{t.g(result.liquidTargetG)}</div>
             <div className="mt-2 flex justify-center">
               {golden ? (
                 <span className="flex items-center gap-1 rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-semibold text-emerald-400">
                   <Sparkles size={12} />
-                  Golden Spot · 38.0%
+                  {t.calc.golden}
                 </span>
               ) : (
                 <span className="rounded-full bg-amber-400/15 px-3 py-1 text-xs font-semibold text-amber-300">
-                  Custom · {(state.hydration * 100).toFixed(1)}%
+                  {t.calc.custom(state.hydration * 100)}
                 </span>
               )}
             </div>
@@ -204,7 +202,7 @@ export default function Calculator() {
                 className="flex items-center gap-1 text-xs text-zinc-400 hover:text-zinc-200"
               >
                 <SlidersHorizontal size={14} />
-                Fine-tune
+                {t.calc.fineTune}
               </button>
             </div>
             <p className="mt-1 text-sm text-zinc-400">{feel.detail}</p>
@@ -217,12 +215,12 @@ export default function Calculator() {
                   step={HYDRATION_STEP}
                   value={state.hydration}
                   onChange={(e) => setHydration(Number(e.target.value))}
-                  aria-label="Hydration percentage"
+                  aria-label={t.calc.hydrationAria}
                   className="w-full accent-amber-400"
                 />
                 <div className="flex justify-between text-xs text-zinc-500">
-                  <span>36.5% firm</span>
-                  <span>39.5% soft</span>
+                  <span>{t.calc.firmEnd}</span>
+                  <span>{t.calc.softEnd}</span>
                 </div>
                 {!golden && (
                   <button
@@ -231,7 +229,7 @@ export default function Calculator() {
                     className="flex items-center gap-1 text-xs font-semibold text-emerald-400"
                   >
                     <RotateCcw size={12} />
-                    Back to Golden Spot (38.0%)
+                    {t.calc.reset}
                   </button>
                 )}
               </div>
@@ -241,38 +239,69 @@ export default function Calculator() {
           <div className="border-t border-zinc-800 pt-4">
             <label className="flex items-center justify-between gap-3">
               <span>
-                <span className="block text-zinc-300">Tare Egg</span>
-                <span className="text-xs text-zinc-500">Optional · tare vessel, crack eggs, enter weight</span>
+                <span className="block text-zinc-300">{t.calc.tareEgg}</span>
+                <span className="text-xs text-zinc-500">{t.calc.tareHint}</span>
               </span>
               <span className="flex items-baseline gap-1">
                 <input
                   type="number"
                   inputMode="numeric"
+                  dir="ltr"
                   min={0}
                   value={state.eggG === 0 ? '' : state.eggG}
                   placeholder="0"
                   onChange={(e) => setEgg(Number(e.target.value))}
-                  aria-label="Egg weight in grams"
-                  className="w-24 rounded-lg bg-zinc-800 px-3 py-2 text-right text-2xl font-semibold tabular-nums outline-none focus:ring-2 focus:ring-amber-400"
+                  aria-label={t.calc.eggAria}
+                  className="w-24 rounded-lg bg-zinc-800 px-3 py-2 text-end text-2xl font-semibold tabular-nums outline-none focus:ring-2 focus:ring-amber-400"
                 />
-                <span className="text-zinc-400">g</span>
+                <span className="text-zinc-400">{t.units.g(0)}</span>
               </span>
             </label>
 
             {state.eggG > 0 &&
               (waterToAddG >= 0 ? (
                 <div className="mt-3 rounded-xl bg-amber-400/10 p-4 text-center">
-                  <div className="text-sm uppercase tracking-wide text-amber-300">Water to add</div>
-                  <div className="text-5xl font-bold tabular-nums text-amber-400">{waterToAddG}g</div>
+                  <div className="text-sm uppercase tracking-wide text-amber-300">{t.calc.waterToAdd}</div>
+                  <div className="text-5xl font-bold tabular-nums text-amber-400">{t.g(waterToAddG)}</div>
                 </div>
               ) : (
                 <div
                   role="alert"
                   className="mt-3 rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-center text-red-200"
                 >
-                  Eggs exceed the liquid target by {-waterToAddG}g. Remove some egg — add no water.
+                  {t.calc.eggsExceed(-waterToAddG)}
                 </div>
               ))}
+          </div>
+        </div>
+      </Section>
+
+      <Section icon={<CircleDot size={16} />} title={t.calc.disc}>
+        <div className="space-y-3">
+          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+            {DISCS.map((d) => (
+              <button
+                key={d}
+                type="button"
+                onClick={() => onDiscChange(d)}
+                aria-pressed={disc === d}
+                className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-medium ${
+                  disc === d ? 'bg-amber-400 text-zinc-950' : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                }`}
+              >
+                {t.discs[d]}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center justify-center gap-3 rounded-xl bg-emerald-400/10 p-4">
+            <Timer size={28} className="text-emerald-400" />
+            <div>
+              <div className="text-sm text-emerald-300">
+                {t.calc.boil} · {t.discs[disc]}
+              </div>
+              <div className="text-4xl font-bold tabular-nums text-emerald-400">{t.calc.boilRange(boilMin, boilMax)}</div>
+              {disc === 'lasagna' && <div className="text-xs text-emerald-300/80">{t.calc.lasagnaNote}</div>}
+            </div>
           </div>
         </div>
       </Section>

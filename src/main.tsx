@@ -1,6 +1,8 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
+import { I18nProvider } from './i18n';
+import { PantryProvider } from './hooks/usePantry';
 import './index.css';
 
 const root = document.getElementById('root');
@@ -8,7 +10,11 @@ if (!root) throw new Error('Root element #root not found');
 
 createRoot(root).render(
   <StrictMode>
-    <App />
+    <I18nProvider>
+      <PantryProvider>
+        <App />
+      </PantryProvider>
+    </I18nProvider>
   </StrictMode>,
 );
 

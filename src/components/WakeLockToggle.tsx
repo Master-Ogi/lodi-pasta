@@ -1,7 +1,9 @@
 import { Sun, SunDim } from 'lucide-react';
 import { useWakeLock } from '../hooks/useWakeLock';
+import { useTranslation } from '../i18n';
 
 export default function WakeLockToggle() {
+  const { t } = useTranslation();
   const { supported, active, toggle } = useWakeLock();
   if (!supported) return null;
 
@@ -15,7 +17,7 @@ export default function WakeLockToggle() {
       }`}
     >
       {active ? <Sun size={14} /> : <SunDim size={14} />}
-      {active ? 'Screen awake' : 'Keep screen awake'}
+      {active ? t.app.wakeOn : t.app.wakeOff}
     </button>
   );
 }

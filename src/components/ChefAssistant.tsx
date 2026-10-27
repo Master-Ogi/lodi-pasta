@@ -1,16 +1,15 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { KeyRound, Loader2, Send, Trash2 } from 'lucide-react';
 import type { ChatMessage } from '../types';
-import { askGemini } from '../utils/gemini';
+import { useTranslation } from '../i18n';
+import { analysisSummary, analyzeFlour, askGemini, geminiErrorText } from '../utils/gemini';
+import { imageToJpeg } from '../utils/image';
 import { STORAGE_KEYS, loadJSON, saveJSON } from '../utils/storage';
-
-const SUGGESTIONS = [
-  'My dough formed a ball — what went wrong?',
-  'How do I unclog a dried spaghetti disc?',
-  'Best blend for kids’ fettuccine?',
-];
+import CameraButton from './CameraButton';
+import FlourAnalysisCard from './FlourAnalysisCard';
 
 export default function ChefAssistant() {
+  const { t } = useTranslation();
   const [apiKey, setApiKey] = useState(() => loadJSON<string>(STORAGE_KEYS.geminiKey, ''));
   const [keyDraft, setKeyDraft] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -44,10 +43,27 @@ export default function ChefAssistant() {
     setError(null);
     setLoading(true);
     try {
-      const answer = await askGemini(apiKey, history);
+      const answer = await askGemini(apiKey, history, t.languageName);
       setMessages([...history, { role: 'model', text: answer }]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.');
+      setError(geminiErrorText(err, t));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const sendPhoto = async (file: File) => {
+    if (loading) return;
+    setError(null);
+    setLoading(true);
+    try {
+      const { base64, dataUrl } = await imageToJpeg(file);
+      const history: ChatMessage[] = [...messages, { role: 'user', text: t.chef.photoSent, image: dataUrl }];
+      setMessages(history);
+      const flour = await analyzeFlour(apiKey, base64, t.languageName);
+      setMessages([...history, { role: 'model', text: analysisSummary(flour), flour }]);
+    } catch (err) {
+      setError(geminiErrorText(err, t));
     } finally {
       setLoading(false);
     }
@@ -58,30 +74,26 @@ export default function ChefAssistant() {
       <form onSubmit={saveKey} className="space-y-3 rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
         <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-amber-400">
           <KeyRound size={16} />
-          Connect Chef Gemini
+          {t.chef.connect}
         </h2>
         <p className="text-sm text-zinc-400">
-          Paste your Google AI Studio API key. It is stored only on this device and sent only to Google.{' '}
-          <a
-            href="https://aistudio.google.com/apikey"
-            target="_blank"
-            rel="noreferrer"
-            className="text-emerald-400 underline"
-          >
-            Get a key
+          {t.chef.keyIntro}{' '}
+          <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer" className="text-emerald-400 underline">
+            {t.chef.getKey}
           </a>
         </p>
         <input
           type="password"
           autoComplete="off"
+          dir="ltr"
           value={keyDraft}
           onChange={(e) => setKeyDraft(e.target.value)}
           placeholder="AIza…"
-          aria-label="Google AI Studio API key"
+          aria-label={t.chef.keyAria}
           className="w-full rounded-lg bg-zinc-800 px-3 py-2 outline-none focus:ring-2 focus:ring-amber-400"
         />
         <button type="submit" className="w-full rounded-lg bg-amber-400 py-2.5 font-semibold text-zinc-950 hover:bg-amber-300">
-          Save key
+          {t.chef.saveKey}
         </button>
       </form>
     );
@@ -90,22 +102,22 @@ export default function ChefAssistant() {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between text-xs text-zinc-500">
-        <span>Key saved on this device</span>
+        <span>{t.chef.keySaved}</span>
         <button type="button" onClick={removeKey} className="flex items-center gap-1 hover:text-red-300">
           <Trash2 size={12} />
-          Remove key
+          {t.chef.removeKey}
         </button>
       </div>
 
       {messages.length === 0 && (
         <div className="space-y-2">
-          <p className="text-sm text-zinc-400">Ask about dough texture, discs, blends or sauces.</p>
-          {SUGGESTIONS.map((s) => (
+          <p className="text-sm text-zinc-400">{t.chef.intro}</p>
+          {t.chef.suggestions.map((s) => (
             <button
               key={s}
               type="button"
               onClick={() => void send(s)}
-              className="block w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-left text-sm text-zinc-300 hover:border-zinc-700"
+              className="block w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-start text-sm text-zinc-300 hover:border-zinc-700"
             >
               {s}
             </button>
@@ -117,17 +129,18 @@ export default function ChefAssistant() {
         {messages.map((m, i) => (
           <div
             key={i}
-            className={`whitespace-pre-wrap rounded-2xl px-4 py-3 text-sm ${
-              m.role === 'user' ? 'ml-8 bg-amber-400 text-zinc-950' : 'mr-8 border border-zinc-800 bg-zinc-900 text-zinc-200'
+            className={`rounded-2xl px-4 py-3 text-sm ${
+              m.role === 'user' ? 'ms-8 bg-amber-400 text-zinc-950' : 'me-8 border border-zinc-800 bg-zinc-900 text-zinc-200'
             }`}
           >
-            {m.text}
+            {m.image && <img src={m.image} alt="" className="mb-2 max-h-48 rounded-lg" />}
+            {m.flour ? <FlourAnalysisCard analysis={m.flour} /> : <p className="whitespace-pre-wrap">{m.text}</p>}
           </div>
         ))}
         {loading && (
-          <div className="mr-8 flex items-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm text-zinc-400">
+          <div className="me-8 flex items-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm text-zinc-400">
             <Loader2 size={14} className="animate-spin" />
-            Chef is thinking…
+            {t.chef.thinking}
           </div>
         )}
         {error && (
@@ -145,20 +158,21 @@ export default function ChefAssistant() {
         }}
         className="sticky bottom-20 flex gap-2"
       >
+        <CameraButton label={t.pantry.camera} disabled={loading} onCapture={(f) => void sendPhoto(f)} />
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask Chef Gemini…"
-          aria-label="Your question"
-          className="flex-1 rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2.5 outline-none focus:ring-2 focus:ring-amber-400"
+          placeholder={t.chef.placeholder}
+          aria-label={t.chef.questionAria}
+          className="min-w-0 flex-1 rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2.5 outline-none focus:ring-2 focus:ring-amber-400"
         />
         <button
           type="submit"
           disabled={loading || !input.trim()}
-          aria-label="Send"
+          aria-label={t.chef.send}
           className="rounded-xl bg-amber-400 px-4 text-zinc-950 disabled:opacity-40"
         >
-          <Send size={18} />
+          <Send size={18} className="rtl:-scale-x-100" />
         </button>
       </form>
     </div>

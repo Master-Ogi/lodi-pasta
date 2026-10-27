@@ -21,4 +21,8 @@ export function saveJSON(key: string, value: unknown): void {
 export const STORAGE_KEYS = {
   calculator: 'lodi.calculator',
   geminiKey: 'lodi.geminiKey',
+  lang: 'lodi.lang',
+  disc: 'lodi.disc',
+  pantry: 'lodi.pantry',
+  colors: 'lodi.colors',
 } as const;

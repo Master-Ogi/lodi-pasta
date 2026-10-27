@@ -1,4 +1,4 @@
-import type { BlendPreset, FlourSplit, HydrationFeel, SafetyWarning, Servings, Unit } from '../types';
+import type { BlendPreset, FlourSplit, HydrationFeelKey, SafetyWarning, Servings, Unit } from '../types';
 
 export const FLOUR_STEP_G = 50;
 export const FLOUR_MIN_G = 200;
@@ -7,27 +7,26 @@ export const FLOUR_PRESETS_G = [200, 250, 300, 350, 400, 450, 500, 600];
 
 /** Golden Spot — the locked default */
 export const HYDRATION_DEFAULT = 0.38;
-/** Fine-tune window */
+/** Fine-tune window (hard limits) */
 export const HYDRATION_MIN = 0.365;
 export const HYDRATION_MAX = 0.395;
 export const HYDRATION_STEP = 0.005;
 
-export const WASTE_DEFAULT_G = 30;
-export const WASTE_MIN_G = 20;
-export const WASTE_MAX_G = 45;
-
-export const ADULT_PORTION_G = 150;
-export const KID_PORTION_G = 90;
-/** 100g dry flour yields ~150g fresh pasta */
-export const FRESH_PER_FLOUR = 1.5;
+/** Dry flour per portion — already includes sleeve/disc residue */
+export const ADULT_FLOUR_G = 120;
+export const KID_FLOUR_G = 70;
 
 export const RED_GUMMY_LIMIT_PCT = 70;
 
+export const DEFAULT_YELLOW_PCT = 80;
 export const BLEND_PRESETS: BlendPreset[] = [
-  { id: 'balanced', label: 'Balanced (50/50)', yellowPct: 50 },
-  { id: 'kids-soft', label: 'Kids Soft', yellowPct: 37.5 },
-  { id: 'al-dente', label: 'Traditional Al-Dente', yellowPct: 70 },
+  { id: 'semola-80', yellowPct: 80 },
+  { id: 'balanced', yellowPct: 50 },
+  { id: 'kids-soft', yellowPct: 37.5 },
 ];
+
+/** Color/flavor doses are defined per this flour weight (middle of the 350–400g reference batch). */
+export const COLOR_BASE_FLOUR_G = 375;
 
 export const clamp = (value: number, min: number, max: number): number =>
   Math.min(max, Math.max(min, value));
@@ -52,15 +51,11 @@ export function isGoldenSpot(hydration: number): boolean {
   return Math.abs(hydration - HYDRATION_DEFAULT) < 0.001;
 }
 
-/** Physical feedback for the current hydration: 36.5–37.0 firm, 37.5–38.5 optimal, 39.0–39.5 soft. */
-export function hydrationFeel(hydration: number): HydrationFeel {
-  if (hydration < 0.3725) {
-    return { label: 'Firmer extrusion', detail: 'Drier crumbs, sharp edges, more auger strain. Good for penne and lasagna sheets.' };
-  }
-  if (hydration > 0.3875) {
-    return { label: 'Soft / Kids texture', detail: 'Tender bite, slightly tacky strands — dust with semola so they don’t stick.' };
-  }
-  return { label: 'Optimal crumbly dough', detail: 'Pea-sized crumbs that press together when squeezed. Smooth, even extrusion.' };
+/** 36.5–37.0 firm, 37.5–38.5 optimal, 39.0–39.5 soft. */
+export function hydrationFeel(hydration: number): HydrationFeelKey {
+  if (hydration < 0.3725) return 'firm';
+  if (hydration > 0.3875) return 'soft';
+  return 'optimal';
 }
 
 export function splitFlour(flourG: number, yellowPct: number): FlourSplit {
@@ -69,13 +64,11 @@ export function splitFlour(flourG: number, yellowPct: number): FlourSplit {
 }
 
 /**
- * Required Output = Adults×150 + Kids×90 + Waste, converted to dry flour
- * and rounded UP to the next 50g batch. May exceed FLOUR_MAX_G — caller
- * should prompt for multiple batches in that case.
+ * Flour = Adults×120g + Kids×70g, rounded UP to the next 50g batch.
+ * May exceed FLOUR_MAX_G — caller should prompt for multiple batches.
  */
-export function flourForServings({ adults, kids, wasteG }: Servings): number {
-  const requiredOutputG = adults * ADULT_PORTION_G + kids * KID_PORTION_G + wasteG;
-  const flourG = requiredOutputG / FRESH_PER_FLOUR;
+export function flourForServings({ adults, kids }: Servings): number {
+  const flourG = adults * ADULT_FLOUR_G + kids * KID_FLOUR_G;
   return Math.max(FLOUR_MIN_G, Math.ceil(flourG / FLOUR_STEP_G) * FLOUR_STEP_G);
 }
 
@@ -86,10 +79,9 @@ export function safetyWarnings(yellowPct: number, eggG: number): SafetyWarning[]
   return warnings;
 }
 
-/** Color/flavor addition scaled to flour weight; 0.5 precision under 10, whole units above. */
-export function additionForFlour(per100: number, flourG: number): number {
-  const amount = (per100 * flourG) / 100;
-  return amount < 10 ? Math.round(amount * 2) / 2 : Math.round(amount);
+/** Scale a color/flavor dose from the base batch to the current flour, to the nearest 0.5 (min 0.5). */
+export function scaleColorDose(amount: number, flourG: number): number {
+  return Math.max(0.5, Math.round(((amount * flourG) / COLOR_BASE_FLOUR_G) * 2) / 2);
 }
 
 /** Scale a recipe quantity: g/ml to the unit (to 5 above 100), countables/spoons to the half. */

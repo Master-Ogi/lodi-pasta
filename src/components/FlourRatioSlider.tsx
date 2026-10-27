@@ -1,13 +1,17 @@
 import { BLEND_PRESETS } from '../utils/math';
+import { useTranslation } from '../i18n';
 import type { FlourSplit } from '../types';
 
 interface Props {
   yellowPct: number;
   split: FlourSplit;
+  yellowName: string;
+  redName: string;
   onChange: (yellowPct: number) => void;
 }
 
-export default function FlourRatioSlider({ yellowPct, split, onChange }: Props) {
+export default function FlourRatioSlider({ yellowPct, split, yellowName, redName, onChange }: Props) {
+  const { t } = useTranslation();
   const redPct = 100 - yellowPct;
 
   return (
@@ -24,7 +28,7 @@ export default function FlourRatioSlider({ yellowPct, split, onChange }: Props) 
                 : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
             }`}
           >
-            {preset.label}
+            {t.calc.presets[preset.id]}
           </button>
         ))}
       </div>
@@ -36,18 +40,20 @@ export default function FlourRatioSlider({ yellowPct, split, onChange }: Props) 
         step={2.5}
         value={yellowPct}
         onChange={(e) => onChange(Number(e.target.value))}
-        aria-label="Yellow flour percentage"
+        aria-label={t.calc.ratioAria}
         className="w-full accent-amber-400"
       />
 
       <div className="grid grid-cols-2 gap-3 text-sm">
-        <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3">
-          <div className="text-yellow-300">Semola Rimacinata · {yellowPct}%</div>
-          <div className="text-2xl font-semibold tabular-nums">{split.yellowG}g</div>
+        <div className="min-w-0 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3">
+          <div className="truncate text-yellow-300">{yellowName}</div>
+          <div className="text-xs text-yellow-300/70">{t.num(yellowPct)}%</div>
+          <div className="text-2xl font-semibold tabular-nums">{t.g(split.yellowG)}</div>
         </div>
-        <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3">
-          <div className="text-red-300">Cuoco Tipo 00 · {redPct}%</div>
-          <div className="text-2xl font-semibold tabular-nums">{split.redG}g</div>
+        <div className="min-w-0 rounded-lg border border-red-500/30 bg-red-500/10 p-3">
+          <div className="truncate text-red-300">{redName}</div>
+          <div className="text-xs text-red-300/70">{t.num(redPct)}%</div>
+          <div className="text-2xl font-semibold tabular-nums">{t.g(split.redG)}</div>
         </div>
       </div>
     </div>
