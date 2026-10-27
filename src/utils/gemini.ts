@@ -36,6 +36,8 @@ Machine mechanics you must respect:
 - Pour the egg/water mix slowly over 15–20 seconds across all lid slits while the auger turns.
 - Recycle the first 3–5 cm of extruded pasta back into the chamber through the lid slots for even density.
 - Default blend: 80% Semola Rimacinata (Yellow, durum — structure and bite) / 20% Tipo 00 (Red, soft wheat — smoothness). Red above 70% risks gummy extrusion; 100% Yellow without egg risks brittle extrusion.
+- Blend presets (Yellow/Red): Artisanal 80/20, Gold Spot 70/30, Balanced 50/50, Kids Soft 35/65. Each flour is weighed in clean 5g steps.
+- Optional boosters, taken out of the Red (Tipo 00) so the Semola keeps its gluten structure: Red Lentil flour 15% of total (high protein, natural orange hue) and Tapioca starch 8% of total (elasticity, gloss, Q-texture).
 - Boiling times for fresh extruded pasta: angel hair 3–4 min, spaghetti/fettuccine 5–6 min, penne/thick round 10–12 min, lasagna sheets 3–4 min (or par-boil 2 min before baking).
 
 Disc care:

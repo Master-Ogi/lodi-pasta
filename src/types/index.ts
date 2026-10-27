@@ -2,14 +2,21 @@ export type Language = 'en' | 'he' | 'pl';
 
 /** Yellow = durum semola (structure), Red = soft Tipo 00 (smoothness) */
 export interface BlendPreset {
-  id: 'semola-80' | 'balanced' | 'kids-soft';
+  id: 'artisanal-80' | 'gold-70' | 'balanced' | 'kids-soft';
   /** Percentage of Yellow flour (0–100). Red is the remainder. */
   yellowPct: number;
 }
 
+/** Optional flour boosters — each replaces part of the Red (Tipo 00) */
+export type BoosterId = 'lentil' | 'tapioca';
+export type Boosters = Record<BoosterId, boolean>;
+
+/** All parts in clean 5g steps; they always sum to the total flour. */
 export interface FlourSplit {
   yellowG: number;
   redG: number;
+  lentilG: number;
+  tapiocaG: number;
 }
 
 export interface Servings {
@@ -28,6 +35,7 @@ export interface CalculatorState {
   /** Actual weight of cracked eggs on the scale, in grams */
   eggG: number;
   servings: Servings;
+  boosters: Boosters;
 }
 
 export interface CalculatorResult {

@@ -1,6 +1,7 @@
 import type {
   AdditionId,
   BlendPreset,
+  BoosterId,
   ColorId,
   Disc,
   HydrationFeelKey,
@@ -41,6 +42,7 @@ export interface Dictionary {
     flour: string;
     flourAria: string;
     presets: Record<BlendPreset['id'], string>;
+    boosters: { title: string; hint: string; names: Record<BoosterId, string>; badges: Record<BoosterId, string> };
     yellowFallback: string;
     redFallback: string;
     ratioAria: string;
@@ -104,7 +106,6 @@ export interface Dictionary {
     minutes: (m: number) => string;
     noMatch: string;
     back: string;
-    servings: string;
     flourBatch: (g: number) => string;
     ingredients: string;
     method: string;

@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { AlertTriangle, CircleDot, Droplets, RotateCcw, Scale, SlidersHorizontal, Sparkles, Timer, Users } from 'lucide-react';
+import { AlertTriangle, CircleDot, Droplets, RotateCcw, Scale, SlidersHorizontal, Sparkles, Sprout, Timer, Users } from 'lucide-react';
 import { usePastaCalculator } from '../hooks/usePastaCalculator';
 import { usePantry } from '../hooks/usePantry';
 import { useTranslation } from '../i18n';
@@ -18,6 +18,8 @@ import type { Disc } from '../types';
 import FlourRatioSlider from './FlourRatioSlider';
 import ColorFlavorDrawer from './ColorFlavorDrawer';
 import FlourPantryDrawer from './FlourPantryDrawer';
+import FlourBoosters from './FlourBoosters';
+import ServingsCounter from './ServingsCounter';
 
 function Section({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
   return (
@@ -28,34 +30,6 @@ function Section({ icon, title, children }: { icon: ReactNode; title: string; ch
       </h2>
       {children}
     </section>
-  );
-}
-
-function Stepper({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
-  const { t } = useTranslation();
-  return (
-    <div className="flex items-center justify-between">
-      <span className="text-zinc-300">{label}</span>
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => onChange(value - 1)}
-          className="h-9 w-9 rounded-lg bg-zinc-800 text-lg hover:bg-zinc-700"
-          aria-label={t.calc.fewer(label)}
-        >
-          −
-        </button>
-        <span className="w-6 text-center text-lg font-semibold tabular-nums">{t.num(value)}</span>
-        <button
-          type="button"
-          onClick={() => onChange(value + 1)}
-          className="h-9 w-9 rounded-lg bg-zinc-800 text-lg hover:bg-zinc-700"
-          aria-label={t.calc.more(label)}
-        >
-          +
-        </button>
-      </div>
-    </div>
   );
 }
 
@@ -77,6 +51,7 @@ export default function Calculator({ disc, onDiscChange }: Props) {
     setEgg,
     setServings,
     applyServings,
+    toggleBooster,
   } = usePastaCalculator();
 
   // Free-typed flour input; snaps to the nearest 50g batch on blur / Enter.
@@ -100,8 +75,7 @@ export default function Calculator({ disc, onDiscChange }: Props) {
     <div className="space-y-4">
       <Section icon={<Users size={16} />} title={t.calc.servings}>
         <div className="space-y-3">
-          <Stepper label={t.calc.adults} value={state.servings.adults} onChange={(adults) => setServings({ adults })} />
-          <Stepper label={t.calc.kids} value={state.servings.kids} onChange={(kids) => setServings({ kids })} />
+          <ServingsCounter servings={state.servings} onChange={setServings} />
           <p className="text-xs text-zinc-500">{t.calc.servingsHint}</p>
           <button
             type="button"
@@ -152,6 +126,10 @@ export default function Calculator({ disc, onDiscChange }: Props) {
             onChange={setYellowPct}
           />
         </div>
+      </Section>
+
+      <Section icon={<Sprout size={16} />} title={t.calc.boosters.title}>
+        <FlourBoosters boosters={state.boosters} split={result.split} onToggle={toggleBooster} />
       </Section>
 
       {result.warnings.length > 0 && (

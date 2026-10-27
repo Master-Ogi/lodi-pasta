@@ -1,9 +1,19 @@
 import { useState } from 'react';
 import { ArrowLeft, Clock, Lightbulb, Timer } from 'lucide-react';
-import type { Disc, Recipe } from '../types';
+import type { Disc, Recipe, Servings } from '../types';
 import { useTranslation } from '../i18n';
 import { BOIL_MINUTES } from '../data/discs';
-import { flourForServings, scaleQty } from '../utils/math';
+import { FLOUR_MAX_G, flourForServings, recipeBaseFlour, scaleQty } from '../utils/math';
+import { STORAGE_KEYS, loadJSON } from '../utils/storage';
+import ServingsCounter from './ServingsCounter';
+
+/** Start from the Calculator's last saved Adults & Kids, else the recipe's base as adults. */
+function initialServings(baseServings: number): Servings {
+  const saved = loadJSON<{ servings?: Partial<Servings> }>(STORAGE_KEYS.calculator, {}).servings;
+  const adults = Math.max(0, Math.round(Number(saved?.adults) || 0));
+  const kids = Math.max(0, Math.round(Number(saved?.kids) || 0));
+  return adults + kids > 0 ? { adults, kids } : { adults: baseServings, kids: 0 };
+}
 
 interface Props {
   recipe: Recipe;
@@ -14,9 +24,11 @@ interface Props {
 export default function RecipeCard({ recipe, activeDisc, onBack }: Props) {
   const { t } = useTranslation();
   const text = t.recipes.items[recipe.id];
-  const [servings, setServings] = useState(recipe.baseServings);
-  const factor = servings / recipe.baseServings;
-  const flourG = flourForServings({ adults: servings, kids: 0 });
+  const [servings, setServings] = useState<Servings>(() => initialServings(recipe.baseServings));
+  // Same engine as the Calculator: Adults×120g + Kids×70g, up to the next 50g batch.
+  // Sauce scales with the pasta actually made, relative to the flour the recipe was written for.
+  const flourG = flourForServings(servings);
+  const factor = flourG / recipeBaseFlour(recipe.baseServings);
 
   // The calculator's active disc leads the pairings when it suits this dish.
   const paired = recipe.discs.includes(activeDisc);
@@ -63,29 +75,10 @@ export default function RecipeCard({ recipe, activeDisc, onBack }: Props) {
       </section>
 
       <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
-        <div className="flex items-center justify-between">
-          <span className="text-zinc-300">{t.recipes.servings}</span>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setServings((s) => Math.max(1, s - 1))}
-              className="h-9 w-9 rounded-lg bg-zinc-800 text-lg hover:bg-zinc-700"
-              aria-label={t.calc.fewer(t.recipes.servings)}
-            >
-              −
-            </button>
-            <span className="w-6 text-center text-lg font-semibold tabular-nums">{t.num(servings)}</span>
-            <button
-              type="button"
-              onClick={() => setServings((s) => Math.min(12, s + 1))}
-              className="h-9 w-9 rounded-lg bg-zinc-800 text-lg hover:bg-zinc-700"
-              aria-label={t.calc.more(t.recipes.servings)}
-            >
-              +
-            </button>
-          </div>
-        </div>
-        <p className="mt-2 text-sm font-semibold text-amber-400">{t.recipes.flourBatch(flourG)}</p>
+        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-amber-400">{t.calc.servings}</h3>
+        <ServingsCounter servings={servings} onChange={(patch) => setServings((s) => ({ ...s, ...patch }))} />
+        <p className="mt-3 text-sm font-semibold text-amber-400">{t.recipes.flourBatch(flourG)}</p>
+        {flourG > FLOUR_MAX_G && <p className="mt-1 text-sm text-amber-300">{t.calc.tooLarge(flourG, FLOUR_MAX_G)}</p>}
       </section>
 
       <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">

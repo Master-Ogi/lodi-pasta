@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { CalculatorResult, CalculatorState, Servings } from '../types';
+import type { BoosterId, Boosters, CalculatorResult, CalculatorState, Servings } from '../types';
 import {
   DEFAULT_YELLOW_PCT,
   HYDRATION_DEFAULT,
@@ -16,7 +16,7 @@ import {
 import { STORAGE_KEYS, loadJSON, saveJSON } from '../utils/storage';
 
 /** Settings that survive a reload. Hydration always restarts at the Golden Spot; egg weight is per-batch. */
-type PersistedSettings = Pick<CalculatorState, 'flourG' | 'yellowPct' | 'servings'>;
+type PersistedSettings = Pick<CalculatorState, 'flourG' | 'yellowPct' | 'servings' | 'boosters'>;
 
 const DEFAULT_SERVINGS: Servings = { adults: 2, kids: 2 };
 
@@ -33,6 +33,7 @@ function loadInitialState(): CalculatorState {
     yellowPct: clamp(Number(saved.yellowPct ?? DEFAULT_YELLOW_PCT), 0, 100),
     eggG: 0,
     servings: sanitizeServings({ ...DEFAULT_SERVINGS, ...saved.servings }),
+    boosters: { lentil: saved.boosters?.lentil === true, tapioca: saved.boosters?.tapioca === true },
   };
 }
 
@@ -40,16 +41,21 @@ export function usePastaCalculator() {
   const [state, setState] = useState<CalculatorState>(loadInitialState);
 
   useEffect(() => {
-    const settings: PersistedSettings = { flourG: state.flourG, yellowPct: state.yellowPct, servings: state.servings };
+    const settings: PersistedSettings = {
+      flourG: state.flourG,
+      yellowPct: state.yellowPct,
+      servings: state.servings,
+      boosters: state.boosters,
+    };
     saveJSON(STORAGE_KEYS.calculator, settings);
-  }, [state.flourG, state.yellowPct, state.servings]);
+  }, [state.flourG, state.yellowPct, state.servings, state.boosters]);
 
   const result = useMemo<CalculatorResult>(() => {
     const liquidTargetG = liquidTarget(state.flourG, state.hydration);
     return {
       liquidTargetG,
       waterToAddG: waterToAdd(liquidTargetG, state.eggG),
-      split: splitFlour(state.flourG, state.yellowPct),
+      split: splitFlour(state.flourG, state.yellowPct, state.boosters),
       warnings: safetyWarnings(state.yellowPct, state.eggG),
       servingsFlourG: flourForServings(state.servings),
     };
@@ -73,6 +79,12 @@ export function usePastaCalculator() {
 
   const applyServings = () => setFlour(result.servingsFlourG);
 
+  const toggleBooster = (id: BoosterId) =>
+    setState((s) => {
+      const boosters: Boosters = { ...s.boosters, [id]: !s.boosters[id] };
+      return { ...s, boosters };
+    });
+
   return {
     state,
     result,
@@ -83,5 +95,6 @@ export function usePastaCalculator() {
     setEgg,
     setServings,
     applyServings,
+    toggleBooster,
   };
 }
