@@ -39,3 +39,53 @@ export interface CalculatorResult {
   /** Flour batch recommended for the current servings */
   servingsFlourG: number;
 }
+
+export interface HydrationFeel {
+  label: string;
+  detail: string;
+}
+
+export interface ColorAddition {
+  name: string;
+  /** Amount per 100g of flour */
+  per100: number;
+  unit: 'g' | 'ml';
+}
+
+export interface ColorFlavor {
+  id: 'sunset' | 'purple' | 'green' | 'black' | 'herbs' | 'curry';
+  label: string;
+  /** Tailwind background class for the swatch */
+  swatch: string;
+  additions: ColorAddition[];
+  note: string;
+}
+
+export type RecipeCategory = 'kids' | 'italian' | 'asian' | 'gourmet';
+export type Disc = 'fettuccine' | 'spaghetti' | 'penne' | 'lasagna';
+export type Unit = 'g' | 'ml' | 'tbsp' | 'tsp' | 'pc' | 'clove';
+
+export interface Ingredient {
+  item: string;
+  /** Omitted for "to taste" items */
+  qty?: number;
+  unit?: Unit;
+}
+
+export interface Recipe {
+  id: string;
+  title: string;
+  subtitle: string;
+  categories: RecipeCategory[];
+  disc: Disc;
+  baseServings: number;
+  minutes: number;
+  ingredients: Ingredient[];
+  steps: string[];
+  tips: string[];
+}
+
+export interface ChatMessage {
+  role: 'user' | 'model';
+  text: string;
+}

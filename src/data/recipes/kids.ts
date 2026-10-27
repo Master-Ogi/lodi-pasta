@@ -1,0 +1,77 @@
+import type { Recipe } from '../../types';
+
+export const kidsRecipes: Recipe[] = [
+  {
+    id: 'mac-cheese',
+    title: 'Mac & Cheese',
+    subtitle: 'Stovetop cheddar sauce',
+    categories: ['kids'],
+    disc: 'penne',
+    baseServings: 4,
+    minutes: 25,
+    ingredients: [
+      { item: 'Butter', qty: 40, unit: 'g' },
+      { item: 'Tipo 00 flour', qty: 30, unit: 'g' },
+      { item: 'Whole milk', qty: 500, unit: 'ml' },
+      { item: 'Mild cheddar, grated', qty: 200, unit: 'g' },
+      { item: 'Parmigiano Reggiano, grated', qty: 40, unit: 'g' },
+      { item: 'Mustard powder', qty: 0.5, unit: 'tsp' },
+    ],
+    steps: [
+      'Melt the butter, stir in the flour and cook 2 minutes without browning.',
+      'Whisk in the milk gradually; simmer 3 minutes until it coats a spoon.',
+      'Take the pan OFF the heat; add the cheeses by the handful, stirring until smooth.',
+      'Fold in the cooked penne with a splash of pasta water.',
+    ],
+    tips: [
+      'Adding cheese off heat keeps the sauce smooth instead of grainy.',
+      'Cut penne short (3–4 cm) for small hands.',
+    ],
+  },
+  {
+    id: 'cream-garlic',
+    title: 'Panna e Aglio',
+    subtitle: 'Gentle cream & garlic white sauce',
+    categories: ['kids'],
+    disc: 'fettuccine',
+    baseServings: 4,
+    minutes: 15,
+    ingredients: [
+      { item: 'Butter', qty: 30, unit: 'g' },
+      { item: 'Garlic, minced', qty: 3, unit: 'clove' },
+      { item: 'Heavy cream', qty: 250, unit: 'ml' },
+      { item: 'Parmigiano Reggiano, grated', qty: 50, unit: 'g' },
+      { item: 'Nutmeg' },
+    ],
+    steps: [
+      'Melt the butter over low heat; cook the garlic 2 minutes without colouring.',
+      'Add the cream and simmer gently 3 minutes until slightly thickened.',
+      'Add the cooked fettuccine, take OFF the heat, toss in the Parmesan with a splash of pasta water.',
+    ],
+    tips: ['Garlic should stay pale — browned garlic turns bitter in cream sauces.'],
+  },
+  {
+    id: 'chicken-noodle-soup',
+    title: 'Chicken Noodle Soup',
+    subtitle: 'Short fettuccine in golden broth',
+    categories: ['kids'],
+    disc: 'fettuccine',
+    baseServings: 4,
+    minutes: 40,
+    ingredients: [
+      { item: 'Boneless chicken thighs', qty: 400, unit: 'g' },
+      { item: 'Carrots, diced', qty: 2, unit: 'pc' },
+      { item: 'Celery stalks, diced', qty: 2, unit: 'pc' },
+      { item: 'Onion, diced', qty: 1, unit: 'pc' },
+      { item: 'Chicken stock', qty: 1500, unit: 'ml' },
+      { item: 'Butter', qty: 20, unit: 'g' },
+      { item: 'Parsley, chopped', qty: 2, unit: 'tbsp' },
+    ],
+    steps: [
+      'Sweat the onion, carrot and celery in butter for 8 minutes.',
+      'Add the stock and whole chicken thighs; simmer 20 minutes. Lift out, shred, return.',
+      'Add fettuccine cut to 5 cm and simmer 3 minutes. Finish with parsley.',
+    ],
+    tips: ['For leftovers, cook the noodles separately so they don’t soak up all the broth overnight.'],
+  },
+];

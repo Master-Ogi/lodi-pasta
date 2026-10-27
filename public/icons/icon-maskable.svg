@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#18181b"/>
+  <!-- Content scaled into the 80% maskable safe zone -->
+  <g transform="translate(51.2 51.2) scale(0.8)">
+    <circle cx="256" cy="176" r="104" fill="#27272a" stroke="#fbbf24" stroke-width="16"/>
+    <g fill="#09090b">
+      <circle cx="216" cy="136" r="13"/><circle cx="256" cy="136" r="13"/><circle cx="296" cy="136" r="13"/>
+      <circle cx="216" cy="176" r="13"/><circle cx="256" cy="176" r="13"/><circle cx="296" cy="176" r="13"/>
+      <circle cx="216" cy="216" r="13"/><circle cx="256" cy="216" r="13"/><circle cx="296" cy="216" r="13"/>
+    </g>
+    <g fill="none" stroke="#fbbf24" stroke-width="14" stroke-linecap="round">
+      <path d="M196 300 q-14 36 0 72 t0 72"/>
+      <path d="M236 300 q14 36 0 72 t0 72"/>
+      <path d="M276 300 q-14 36 0 72 t0 72"/>
+      <path d="M316 300 q14 36 0 72 t0 72"/>
+    </g>
+  </g>
+</svg>

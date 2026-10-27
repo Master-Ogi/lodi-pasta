@@ -1,17 +1,21 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { AlertTriangle, Droplets, Egg, Scale, Users } from 'lucide-react';
+import { AlertTriangle, Droplets, RotateCcw, Scale, SlidersHorizontal, Sparkles, Users } from 'lucide-react';
 import { usePastaCalculator } from '../hooks/usePastaCalculator';
 import {
   FLOUR_MAX_G,
   FLOUR_PRESETS_G,
   HYDRATION_MAX,
   HYDRATION_MIN,
+  HYDRATION_STEP,
   WASTE_MAX_G,
   WASTE_MIN_G,
+  hydrationFeel,
+  isGoldenSpot,
   snapFlour,
 } from '../utils/math';
 import type { SafetyWarning } from '../types';
 import FlourRatioSlider from './FlourRatioSlider';
+import ColorFlavorDrawer from './ColorFlavorDrawer';
 
 const WARNING_TEXT: Record<SafetyWarning, string> = {
   'red-gummy': 'Red (Tipo 00) above 70% — gummy extrusion risk.',
@@ -58,8 +62,17 @@ function Stepper({ label, value, onChange }: { label: string; value: number; onC
 }
 
 export default function Calculator() {
-  const { state, result, setFlour, setHydration, setYellowPct, setEgg, setServings, applyServings } =
-    usePastaCalculator();
+  const {
+    state,
+    result,
+    setFlour,
+    setHydration,
+    resetHydration,
+    setYellowPct,
+    setEgg,
+    setServings,
+    applyServings,
+  } = usePastaCalculator();
 
   // Free-typed flour input; snaps to the nearest 50g batch on blur / Enter.
   const [flourDraft, setFlourDraft] = useState(String(state.flourG));
@@ -69,6 +82,10 @@ export default function Calculator() {
     setFlour(snapped);
     setFlourDraft(String(snapped));
   };
+
+  const [fineTune, setFineTune] = useState(false);
+  const golden = isGoldenSpot(state.hydration);
+  const feel = hydrationFeel(state.hydration);
 
   const { waterToAddG } = result;
   const servingsTooLarge = result.servingsFlourG > FLOUR_MAX_G;
@@ -156,59 +173,108 @@ export default function Calculator() {
         </div>
       )}
 
-      <Section icon={<Droplets size={16} />} title="Liquid">
-        <div className="space-y-3">
-          <label className="block">
-            <div className="flex justify-between text-zinc-300">
-              <span>Hydration</span>
-              <span className="tabular-nums">{(state.hydration * 100).toFixed(1)}%</span>
-            </div>
-            <input
-              type="range"
-              min={HYDRATION_MIN}
-              max={HYDRATION_MAX}
-              step={0.005}
-              value={state.hydration}
-              onChange={(e) => setHydration(Number(e.target.value))}
-              className="w-full accent-amber-400"
-            />
-          </label>
-          <div className="flex items-baseline justify-between">
-            <span className="text-zinc-300">Total liquid target</span>
-            <span className="text-3xl font-semibold tabular-nums">{result.liquidTargetG}g</span>
-          </div>
-        </div>
-      </Section>
+      <ColorFlavorDrawer flourG={state.flourG} />
 
-      <Section icon={<Egg size={16} />} title="Scale">
-        <ol className="mb-3 list-decimal space-y-1 pl-5 text-sm text-zinc-400">
-          <li>Tare your measuring vessel (0g).</li>
-          <li>Crack egg(s) in and enter the weight.</li>
-          <li>Top up with water to the amount below.</li>
-        </ol>
-        <div className="mb-4 flex items-baseline gap-2">
-          <input
-            type="number"
-            inputMode="numeric"
-            min={0}
-            value={state.eggG === 0 ? '' : state.eggG}
-            placeholder="0"
-            onChange={(e) => setEgg(Number(e.target.value))}
-            aria-label="Egg weight in grams"
-            className="w-28 rounded-lg bg-zinc-800 px-3 py-2 text-3xl font-semibold tabular-nums outline-none focus:ring-2 focus:ring-amber-400"
-          />
-          <span className="text-xl text-zinc-400">g egg</span>
+      <Section icon={<Droplets size={16} />} title="Liquid & Scale">
+        <div className="space-y-4">
+          <div className="text-center">
+            <div className="text-sm text-zinc-400">Total liquid (egg + water)</div>
+            <div className="text-6xl font-bold tabular-nums text-amber-400">{result.liquidTargetG}g</div>
+            <div className="mt-2 flex justify-center">
+              {golden ? (
+                <span className="flex items-center gap-1 rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-semibold text-emerald-400">
+                  <Sparkles size={12} />
+                  Golden Spot · 38.0%
+                </span>
+              ) : (
+                <span className="rounded-full bg-amber-400/15 px-3 py-1 text-xs font-semibold text-amber-300">
+                  Custom · {(state.hydration * 100).toFixed(1)}%
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-lg bg-zinc-950/60 p-3">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold">{feel.label}</span>
+              <button
+                type="button"
+                onClick={() => setFineTune((f) => !f)}
+                aria-expanded={fineTune}
+                className="flex items-center gap-1 text-xs text-zinc-400 hover:text-zinc-200"
+              >
+                <SlidersHorizontal size={14} />
+                Fine-tune
+              </button>
+            </div>
+            <p className="mt-1 text-sm text-zinc-400">{feel.detail}</p>
+            {fineTune && (
+              <div className="mt-3 space-y-2">
+                <input
+                  type="range"
+                  min={HYDRATION_MIN}
+                  max={HYDRATION_MAX}
+                  step={HYDRATION_STEP}
+                  value={state.hydration}
+                  onChange={(e) => setHydration(Number(e.target.value))}
+                  aria-label="Hydration percentage"
+                  className="w-full accent-amber-400"
+                />
+                <div className="flex justify-between text-xs text-zinc-500">
+                  <span>36.5% firm</span>
+                  <span>39.5% soft</span>
+                </div>
+                {!golden && (
+                  <button
+                    type="button"
+                    onClick={resetHydration}
+                    className="flex items-center gap-1 text-xs font-semibold text-emerald-400"
+                  >
+                    <RotateCcw size={12} />
+                    Back to Golden Spot (38.0%)
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="border-t border-zinc-800 pt-4">
+            <label className="flex items-center justify-between gap-3">
+              <span>
+                <span className="block text-zinc-300">Tare Egg</span>
+                <span className="text-xs text-zinc-500">Optional · tare vessel, crack eggs, enter weight</span>
+              </span>
+              <span className="flex items-baseline gap-1">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  value={state.eggG === 0 ? '' : state.eggG}
+                  placeholder="0"
+                  onChange={(e) => setEgg(Number(e.target.value))}
+                  aria-label="Egg weight in grams"
+                  className="w-24 rounded-lg bg-zinc-800 px-3 py-2 text-right text-2xl font-semibold tabular-nums outline-none focus:ring-2 focus:ring-amber-400"
+                />
+                <span className="text-zinc-400">g</span>
+              </span>
+            </label>
+
+            {state.eggG > 0 &&
+              (waterToAddG >= 0 ? (
+                <div className="mt-3 rounded-xl bg-amber-400/10 p-4 text-center">
+                  <div className="text-sm uppercase tracking-wide text-amber-300">Water to add</div>
+                  <div className="text-5xl font-bold tabular-nums text-amber-400">{waterToAddG}g</div>
+                </div>
+              ) : (
+                <div
+                  role="alert"
+                  className="mt-3 rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-center text-red-200"
+                >
+                  Eggs exceed the liquid target by {-waterToAddG}g. Remove some egg — add no water.
+                </div>
+              ))}
+          </div>
         </div>
-        {waterToAddG >= 0 ? (
-          <div className="rounded-xl bg-amber-400/10 p-4 text-center">
-            <div className="text-sm uppercase tracking-wide text-amber-300">Water to add</div>
-            <div className="text-5xl font-bold tabular-nums text-amber-400">{waterToAddG}g</div>
-          </div>
-        ) : (
-          <div role="alert" className="rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-center text-red-200">
-            Eggs exceed the liquid target by {-waterToAddG}g. Remove some egg — add no water.
-          </div>
-        )}
       </Section>
     </div>
   );
