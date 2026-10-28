@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import { I18nProvider } from './i18n';
 import { PantryProvider } from './hooks/usePantry';
+import { CalculatorProvider } from './hooks/usePastaCalculator';
 import './index.css';
 
 const root = document.getElementById('root');
@@ -12,7 +13,9 @@ createRoot(root).render(
   <StrictMode>
     <I18nProvider>
       <PantryProvider>
-        <App />
+        <CalculatorProvider>
+          <App />
+        </CalculatorProvider>
       </PantryProvider>
     </I18nProvider>
   </StrictMode>,

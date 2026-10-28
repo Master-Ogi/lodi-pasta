@@ -29,16 +29,16 @@ export function chefSystemPrompt(languageName: string): string {
 
 Machine mechanics you must respect:
 - Flour batches snap to 50g steps between 200g and 600g (auger pressure needs a discrete batch). Never suggest odd weights like 371g.
-- Portions: adult 120g flour, child 70g flour, rounded up to the next 50g batch.
+- Portions: adult 100g flour, child 75g flour, rounded to the nearest 50g batch (200–600g). 2 adults + 2 kids = 350g.
 - Liquid = flour × hydration. Default hydration is 38.0% (the "Golden Spot"); allowed range 36.5–39.5%. Example: 400g flour → 152g liquid.
 - Scale flow: tare the vessel, crack eggs in, weigh, then top up with water to the liquid target. Squid ink and spinach juice count as liquid.
 - Correct dough after mixing is crumbly, pea-sized, and presses together when squeezed — it should NOT form a ball. A ball means too wet.
 - Pour the egg/water mix slowly over 15–20 seconds across all lid slits while the auger turns.
 - Recycle the first 3–5 cm of extruded pasta back into the chamber through the lid slots for even density.
-- Default blend: 80% Semola Rimacinata (Yellow, durum — structure and bite) / 20% Tipo 00 (Red, soft wheat — smoothness). Red above 70% risks gummy extrusion; 100% Yellow without egg risks brittle extrusion.
-- Blend presets (Yellow/Red): Artisanal 80/20, Gold Spot 70/30, Balanced 50/50, Kids Soft 35/65. Each flour is weighed in clean 5g steps.
-- Optional boosters, taken out of the Red (Tipo 00) so the Semola keeps its gluten structure: Red Lentil flour 15% of total (high protein, natural orange hue) and Tapioca starch 8% of total (elasticity, gloss, Q-texture).
-- Boiling times for fresh extruded pasta: angel hair 3–4 min, spaghetti/fettuccine 5–6 min, penne/thick round 10–12 min, lasagna sheets 3–4 min (or par-boil 2 min before baking).
+- Default blend: 70% Semola Rimacinata (Yellow, durum — structure and bite) / 30% Tipo 00 (Red, soft wheat — smoothness). Red above 70% risks gummy extrusion; 100% Red jams the extruder (keep at least 50% Semola); 100% Yellow without egg risks brittle extrusion.
+- Blend presets (Yellow/Red): Artisanal 80/20, Gold Spot 70/30 (default), Balanced 50/50, Kids Soft 35/65, 100% Semola (traditional Southern Italian, firm bite). Each flour is weighed in clean 5g steps.
+- Optional boosters, taken out of the Red (Tipo 00) ONLY — the Semola is never reduced: Red Lentil flour 15% of total (high protein, natural orange hue) and Tapioca starch 8% of total (elasticity, gloss, Q-texture).
+- Boiling times for FRESH extruded pasta (dried pasta takes far longer): angel hair 1.5–2.5 min, spaghetti 2–3 min (floats when al dente), fettuccine/tagliatelle 3–4 min, penne/thick round 4–5 min, lasagna sheets 2–3 min (or par-boil 1 min before baking).
 
 Disc care:
 - Never let disc holes dry with dough in them between batches; submerge the disc and front sleeve in water.
@@ -112,7 +112,7 @@ export async function analyzeFlour(apiKey: string, jpegBase64: string, languageN
 Return: name (brand + product), grade (e.g. "Tipo 00", "Semola rimacinata"), wheat ("durum" for durum/semola, otherwise "soft"),
 proteinPct (grams of protein per 100 g, or null if not visible), strengthW (the W value, or null if not printed),
 hydrationPct (recommended egg+water hydration for this flour, between 36.5 and 39.5),
-pairing (one or two sentences in ${languageName}: how to blend it — Yellow durum semola gives structure, Red Tipo 00 gives softness; default blend 80/20).`;
+pairing (one or two sentences in ${languageName}: how to blend it — Yellow durum semola gives structure, Red Tipo 00 gives softness; default blend 70/30).`;
 
   const text = await callGemini(apiKey, {
     contents: [{ role: 'user', parts: [{ inlineData: { mimeType: 'image/jpeg', data: jpegBase64 } }, { text: prompt }] }],

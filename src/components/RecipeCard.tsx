@@ -1,19 +1,12 @@
-import { useState } from 'react';
 import { ArrowLeft, Clock, Lightbulb, Timer } from 'lucide-react';
-import type { Disc, Recipe, Servings } from '../types';
+import type { Disc, IngredientAmount, Recipe } from '../types';
 import { useTranslation } from '../i18n';
+import { formatFraction } from '../i18n/format';
 import { BOIL_MINUTES } from '../data/discs';
-import { FLOUR_MAX_G, flourForServings, recipeBaseFlour, scaleQty } from '../utils/math';
-import { STORAGE_KEYS, loadJSON } from '../utils/storage';
+import { usePastaCalculator } from '../hooks/usePastaCalculator';
+import { usePantry } from '../hooks/usePantry';
+import { FLOUR_MAX_G, bouillonTsp, kitchenVolume, recipeBaseFlour, scaleQty } from '../utils/math';
 import ServingsCounter from './ServingsCounter';
-
-/** Start from the Calculator's last saved Adults & Kids, else the recipe's base as adults. */
-function initialServings(baseServings: number): Servings {
-  const saved = loadJSON<{ servings?: Partial<Servings> }>(STORAGE_KEYS.calculator, {}).servings;
-  const adults = Math.max(0, Math.round(Number(saved?.adults) || 0));
-  const kids = Math.max(0, Math.round(Number(saved?.kids) || 0));
-  return adults + kids > 0 ? { adults, kids } : { adults: baseServings, kids: 0 };
-}
 
 interface Props {
   recipe: Recipe;
@@ -23,17 +16,34 @@ interface Props {
 
 export default function RecipeCard({ recipe, activeDisc, onBack }: Props) {
   const { t } = useTranslation();
+  const { bouillon } = usePantry();
+  // Shared with the Calculator: same Adults & Kids, same flour batch, both ways.
+  const { state, result, setServings } = usePastaCalculator();
   const text = t.recipes.items[recipe.id];
-  const [servings, setServings] = useState<Servings>(() => initialServings(recipe.baseServings));
-  // Same engine as the Calculator: Adults×120g + Kids×70g, up to the next 50g batch.
+  const flourG = state.flourG;
   // Sauce scales with the pasta actually made, relative to the flour the recipe was written for.
-  const flourG = flourForServings(servings);
   const factor = flourG / recipeBaseFlour(recipe.baseServings);
 
   // The calculator's active disc leads the pairings when it suits this dish.
   const paired = recipe.discs.includes(activeDisc);
   const pairings = paired ? [activeDisc, ...recipe.discs.filter((d) => d !== activeDisc)] : recipe.discs;
   const [boilMin, boilMax] = BOIL_MINUTES[pairings[0]];
+  const boilNote = t.calc.boilNotes[pairings[0]];
+
+  const measure = (qty: number, unit: IngredientAmount['unit']) =>
+    unit === 'g' ? t.g(qty) : `${t.num(qty)} ${unit ? t.units[unit](qty) : ''}`;
+  const kitchen = (qty: number, unit: NonNullable<IngredientAmount['unit']>) =>
+    `${formatFraction(qty, t.locale)} ${t.units[unit](qty)}`;
+
+  // Bouillon rows become "warm water + dissolved bouillon" from the pantry's stock-base setting.
+  const stock = recipe.ingredients.find((ing) => ing.stock && ing.qty !== undefined);
+  const stockParts = (ing: IngredientAmount) => {
+    const waterMl = scaleQty(ing.qty ?? 0, factor, 'ml');
+    return { water: measure(waterMl, 'ml'), dose: kitchen(bouillonTsp(waterMl, bouillon), 'tsp') };
+  };
+  const steps = stock
+    ? [t.recipes.bouillonStep[bouillon](stockParts(stock).water, stockParts(stock).dose), ...text.steps]
+    : text.steps;
 
   return (
     <article className="space-y-4">
@@ -67,30 +77,46 @@ export default function RecipeCard({ recipe, activeDisc, onBack }: Props) {
           ))}
         </div>
         <p className="flex items-center gap-2 text-sm font-semibold text-emerald-300">
-          <Timer size={16} />
-          {t.discs[pairings[0]]}: {t.recipes.boilFor(t.calc.boilRange(boilMin, boilMax))}
-          {pairings[0] === 'lasagna' && <span className="font-normal text-emerald-300/80">({t.calc.lasagnaNote})</span>}
+          <Timer size={16} className="shrink-0" />
+          <span>
+            {t.discs[pairings[0]]}: {t.recipes.boilFor(t.calc.boilRange(boilMin, boilMax))}
+            {boilNote && <span className="font-normal text-emerald-300/80"> ({boilNote})</span>}
+          </span>
         </p>
         {!paired && <p className="text-xs text-zinc-500">{t.recipes.notPaired(t.discs[activeDisc])}</p>}
       </section>
 
       <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
         <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-amber-400">{t.calc.servings}</h3>
-        <ServingsCounter servings={servings} onChange={(patch) => setServings((s) => ({ ...s, ...patch }))} />
+        <ServingsCounter servings={state.servings} onChange={setServings} />
         <p className="mt-3 text-sm font-semibold text-amber-400">{t.recipes.flourBatch(flourG)}</p>
-        {flourG > FLOUR_MAX_G && <p className="mt-1 text-sm text-amber-300">{t.calc.tooLarge(flourG, FLOUR_MAX_G)}</p>}
+        {result.servingsNeededG > FLOUR_MAX_G && (
+          <p className="mt-1 text-sm text-amber-300">{t.calc.tooLarge(result.servingsNeededG, FLOUR_MAX_G)}</p>
+        )}
       </section>
 
       <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
         <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-amber-400">{t.recipes.ingredients}</h3>
         <ul className="divide-y divide-zinc-800">
           {recipe.ingredients.map((ing, i) => {
+            if (ing.stock) {
+              const { water, dose } = stockParts(ing);
+              return (
+                <li key={i} className="py-2 text-sm text-zinc-200">
+                  {t.recipes.stockLine(water, dose, t.recipes.bouillonName[bouillon])}
+                </li>
+              );
+            }
             const qty = ing.qty === undefined ? undefined : scaleQty(ing.qty, factor, ing.unit);
+            const volume = qty === undefined ? null : kitchenVolume(qty, ing.unit, ing.cupG);
             return (
               <li key={i} className="flex justify-between gap-3 py-2 text-sm">
                 <span className="text-zinc-200">{text.ingredients[i]}</span>
-                <span className="shrink-0 tabular-nums text-zinc-400">
-                  {qty === undefined ? t.recipes.toTaste : `${t.num(qty)} ${ing.unit ? t.units[ing.unit](qty) : ''}`}
+                <span className="shrink-0 text-end tabular-nums text-zinc-400">
+                  {qty === undefined ? t.recipes.toTaste : measure(qty, ing.unit)}
+                  {volume && (
+                    <span className="block text-xs text-zinc-500">{t.recipes.approx(kitchen(volume.qty, volume.unit))}</span>
+                  )}
                 </span>
               </li>
             );
@@ -101,7 +127,7 @@ export default function RecipeCard({ recipe, activeDisc, onBack }: Props) {
       <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
         <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-amber-400">{t.recipes.method}</h3>
         <ol className="list-decimal space-y-2 ps-5 text-sm text-zinc-300">
-          {text.steps.map((step) => (
+          {steps.map((step) => (
             <li key={step}>{step}</li>
           ))}
         </ol>

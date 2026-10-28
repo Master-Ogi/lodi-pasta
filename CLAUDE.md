@@ -1,4 +1,4 @@
-# CLAUDE.md — Lodi Pasta (v1.2.0-build.005)
+# CLAUDE.md — Lodi Pasta (v1.3.0-build.006)
 
 ## Attention & Identity Guardrail
 - The user is **Mr Ogi**. Always address him as Mr Ogi in all summaries, log headers, and completions.
@@ -36,7 +36,8 @@ Lodi Pasta is a mobile-first kitchen companion web application and installable P
 - **Styling**: Tailwind CSS v4 (Dark Mode by default: zinc-900 / zinc-950 background with amber-400 accent). Use logical properties (`ms-`/`me-`/`ps-`/`text-start`) and `rtl:` variants so layouts mirror in Hebrew.
 - **Icons**: `lucide-react`
 - **i18n**: English, Hebrew (RTL) and Polish dictionaries in `src/i18n/`. Every user-facing string lives there — never hard-code UI text in components. Hebrew is stored in logical order.
-- **State & Storage**: React state + context (`I18nProvider`, `PantryProvider`) + `localStorage` (`lodi.*` keys) for language, disc, pantry, colors, calculator settings and the Gemini key.
+- **State & Storage**: React state + context (`I18nProvider`, `PantryProvider`, `CalculatorProvider`) + `localStorage` (`lodi.*` keys) for language, disc, pantry, stock base, colors and the Gemini key. The calculator is NOT persisted — every launch starts fresh (see §3).
+- **Touch UX**: The app root is `select-none` (plus `user-select: none` on buttons/chips/labels in `index.css`) so taps never trigger Android Chrome's text-selection / Touch-to-Search overlay. Inputs and chef replies opt back in with `select-text`.
 - **AI**: Gemini REST API with the user's own key (BYOK) for the chef chat and flour-label photo analysis. The key is sent only to Google.
 - **Hardware Integration**: Screen Wake Lock API (`navigator.wakeLock`) and the rear camera (`capture="environment"`).
 - **PWA**: `public/sw.js` app-shell cache, registered in production only. Cache key = `lodi-pasta-v<version>`.
@@ -49,9 +50,12 @@ Lodi Pasta is a mobile-first kitchen companion web application and installable P
 - Auger pressure requires discrete batches. Total flour weight MUST snap to practical 50g increments between **200g and 600g** (presets: 200, 250, 300, 350, 400, 450, 500, 600g).
 - Arbitrary non-rounded inputs (e.g., 371g) automatically snap to the nearest valid 50g step.
 
+### Launch Defaults
+- Every app launch starts at **2 Adults + 2 Kids → 350g**, **Gold Spot 70/30**, **38.0%** hydration, boosters off.
+
 ### Clean 5g Flour Split
 - Every flour in the split (Yellow, Red, and any booster) is rounded to a clean **5g** increment — e.g. 130g + 220g = 350g, never 131g / 219g.
-- The parts ALWAYS sum to the total flour exactly: Yellow is rounded to 5g, boosters are rounded to 5g, and Red takes the remainder.
+- The parts ALWAYS sum to the total flour exactly: Yellow is rounded to 5g and never changes; boosters and Red share the remainder.
 - Displayed percentages are derived from the weighed grams (one decimal), so they always match the scale.
 
 ### Precision Liquid Engine (Egg + Water on the Gram)
@@ -70,28 +74,44 @@ Lodi Pasta is a mobile-first kitchen companion web application and installable P
 - **Red — Tipo 00 (soft wheat)**: Smoothness, elasticity, and kid-friendly texture.
 - The default Yellow and Red flours are chosen in the Flour Pantry.
 - Presets (Yellow / Red), active preset shown as an amber pill:
-  1. `Artisanal 80/20` — default
-  2. `Gold Spot 70/30`
+  1. `Artisanal 80/20`
+  2. `Gold Spot 70/30` — default
   3. `Balanced 50/50`
   4. `Kids Soft 35/65`
-- The ratio slider moves in 5% steps.
-- Safety Banner: Trigger visual warning if Red flour > 70% (gummy extrusion risk) or Yellow flour is 100% without egg (brittle extrusion risk).
+  5. `100% Semola` — allowed, with an info badge "Traditional Southern Italian · firm bite"
+- The ratio slider moves in 5% steps. Flour names on the split cards wrap to 2 lines (no ellipsis truncation).
+- Safety Banners:
+  - 100% Red (Tipo 00): hard warning "High Jam Risk: 100% soft flour turns gummy in the extruder. Add at least 50% Semolina."
+  - Red > 70% (but not 100%): gummy extrusion risk.
+  - Yellow 100% without egg: brittle extrusion risk.
 
 ### Flour Boosters
 - **Red Lentil Boost (קמח עדשים כתומות)**: 15% of total flour, rounded to 5g (400g batch → 60g). Badge: "High Protein · Natural Orange Hue".
 - **Tapioca Elasticity (קמח טפיוקה)**: 8% of total flour, rounded to 5g (400g batch → 30g). Badge: "Elasticity & Gloss · Q-Texture".
-- Boosters are deducted from the **Red (Tipo 00)** only; the Semola stays intact for gluten structure. Only if the Red runs out (e.g. 80/20 with both boosters) does the remainder come out of the Yellow, so the total stays exact.
-- Toggling a booster off immediately restores the standard blend. Booster toggles persist.
+- Boosters are deducted from the **Red (Tipo 00) ONLY**. The Semola is the structural backbone and is NEVER reduced.
+- If the Red can't cover a booster (e.g. 80/20 with both, or 100% Semola), the booster is capped at the available Red (Lentil first, then Tapioca) and an amber "booster reduced" note appears.
+- Toggling a booster off immediately restores the standard blend.
 
-### Servings Engine (shared by Calculator and Recipe Cards)
-- Dual **Adults & Kids** counter (`ServingsCounter`) in both the Calculator and every recipe card.
-- `Flour Batch = (Adults * 120g) + (Kids * 70g)`, rounded UP to the next 50g batch (minimum 200g). The 120g/70g portions already include sleeve/disc residue — there is no separate waste allowance.
-- Above 600g the app asks for multiple batches.
-- Recipe cards start from the Calculator's last saved Adults & Kids.
-- Recipe sauce ingredients scale by `Flour Batch / (Recipe Base Servings * 120g)` — i.e. with the pasta actually made.
+### Servings Engine — Two-Way Sync (Calculator ⇄ Recipe Cards)
+- One shared state (`CalculatorProvider`): the dual **Adults & Kids** counter (`ServingsCounter`) in the Calculator and in every recipe card edits the SAME servings.
+- Changing Adults / Kids IMMEDIATELY sets the active flour batch — no confirm button.
+- `Flour Batch = Math.max(200, Math.min(600, Math.round(((adults * 100) + (kids * 75)) / 50) * 50))`
+  - 2 Adults + 2 Kids = 350g · 4 Adults = 400g · 1 Adult = 200g (machine minimum) · 2 Adults = 200g.
+- Above 600g the batch caps at 600g and the app asks for multiple batches.
+- The flour batch can still be set directly (presets / typed grams); servings then stay as they are until changed.
+- Recipe sauce ingredients scale by `Flour Batch / (Recipe Base Servings * 100g)` — i.e. with the pasta actually made.
 
-### Disc Boiling Times (fresh extruded pasta)
-- Angel Hair 3–4 min · Spaghetti & Fettuccine 5–6 min · Penne & Thick Round 10–12 min · Lasagna 3–4 min (or par-boil 2 min before baking).
+### Recipe Measures & Stock Base
+- Every metric ingredient also shows a practical kitchen volume where it makes sense: `80g (approx. 1 cup)` Parmesan, `50g (approx. 3½ tbsp)` butter. ml always converts (1 cup = 240ml); gram ingredients need a `cupG` density in `src/data/recipes/index.ts` (meats have none). Cups to the ¼ from ½ cup up, tbsp to the ½ below that, tsp below 1 tbsp.
+- Bouillon rows (`stock: true`) display as `250ml warm water + ½ tsp Better Than Bouillon (dissolved)`, and a matching dissolve step is prepended to the method.
+- Stock base setting in the Flour Pantry: **Better Than Bouillon Paste** (½ tsp per 250ml) or **Standard Powder** (1 tsp per 250ml). Persisted.
+
+### Disc Boiling Times (FRESH extruded pasta — dried pasta takes far longer)
+- Angel Hair 1.5–2.5 min
+- Spaghetti 2–3 min (floats when al dente)
+- Fettuccine / Tagliatelle 3–4 min
+- Penne / Thick Round 4–5 min
+- Lasagna Sheets 2–3 min (or par-boil 1 min before baking)
 - The active Calculator disc leads the pairings in recipe cards.
 
 ### Color & Flavor Doses (per 375g flour, scaled to the nearest 0.5)
@@ -112,7 +132,7 @@ Lodi Pasta is a mobile-first kitchen companion web application and installable P
 
 ## 5. Build Numbering & Release Tracking
 - **Version Tracking**: Track builds in `package.json` and display in app footer. Keep the service worker cache key in `public/sw.js` in step with the version.
-- **Format**: `v[Major].[Minor].[Patch]-build.[Increment]` (Starting at `v1.0.0-build.001`; current `v1.2.0-build.005`).
+- **Format**: `v[Major].[Minor].[Patch]-build.[Increment]` (Starting at `v1.0.0-build.001`; current `v1.3.0-build.006`).
 - **Rule**: Whenever introducing a new feature, component, or calculation fix, increment the build counter by 1.
 
 ---
@@ -126,10 +146,10 @@ lodi-pasta/
 │   │   ├── ServingsCounter.tsx     # Shared Adults & Kids counter (Calculator + RecipeCard)
 │   │   ├── FlourRatioSlider.tsx    # Yellow vs. Red presets, slider and 5g split
 │   │   ├── FlourBoosters.tsx       # Red Lentil / Tapioca toggles
-│   │   ├── FlourPantryDrawer.tsx   # Flours in stock, defaults, camera scan
+│   │   ├── FlourPantryDrawer.tsx   # Flours in stock, defaults, + Add / delete, camera scan, stock base
 │   │   ├── ColorFlavorDrawer.tsx   # Color doses with Dry Chamber / Liquid Cup badges
 │   │   ├── RecipeBook.tsx          # Category + disc filters
-│   │   ├── RecipeCard.tsx          # Recipe detail, disc pairings, servings-scaled sauce
+│   │   ├── RecipeCard.tsx          # Recipe detail, disc pairings, shared servings, kitchen volumes, bouillon
 │   │   ├── ChefAssistant.tsx       # Gemini chef chat with photo analysis
 │   │   ├── FlourAnalysisCard.tsx   # Flour label result + "Add to My Pantry"
 │   │   ├── CameraButton.tsx        # Rear camera file input
@@ -140,17 +160,17 @@ lodi-pasta/
 │   │   ├── discs.ts                # Discs and boil times
 │   │   └── recipes/index.ts        # 18 language-neutral recipes (text in i18n)
 │   ├── hooks/
-│   │   ├── usePastaCalculator.ts   # Core reactive state machine
-│   │   ├── usePantry.tsx           # Flour pantry context
+│   │   ├── usePastaCalculator.tsx  # CalculatorProvider — shared core state machine
+│   │   ├── usePantry.tsx           # Flour pantry + stock base context
 │   │   └── useWakeLock.ts          # Screen wake lock manager
 │   ├── i18n/
 │   │   ├── index.tsx               # I18nProvider, useTranslation, dir/lang
 │   │   ├── types.ts                # Dictionary interface
-│   │   ├── format.ts               # Locale numbers, Polish plurals
+│   │   ├── format.ts               # Locale numbers, kitchen fractions, Polish plurals
 │   │   ├── en.ts / he.ts / pl.ts   # Dictionaries
 │   ├── types/index.ts              # TypeScript interfaces
 │   ├── utils/
-│   │   ├── math.ts                 # Snapping, 5g split, boosters, servings, hydration, scaling
+│   │   ├── math.ts                 # Snapping, 5g split, boosters, servings, hydration, scaling, volumes, bouillon
 │   │   ├── gemini.ts               # Gemini chat + flour vision
 │   │   ├── image.ts                # Camera photo downscale
 │   │   └── storage.ts              # Safe localStorage helpers

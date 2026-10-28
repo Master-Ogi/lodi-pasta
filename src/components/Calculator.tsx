@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { AlertTriangle, CircleDot, Droplets, RotateCcw, Scale, SlidersHorizontal, Sparkles, Sprout, Timer, Users } from 'lucide-react';
 import { usePastaCalculator } from '../hooks/usePastaCalculator';
-import { usePantry } from '../hooks/usePantry';
+import { flourLabel, usePantry } from '../hooks/usePantry';
 import { useTranslation } from '../i18n';
 import {
   FLOUR_MAX_G,
@@ -50,7 +50,6 @@ export default function Calculator({ disc, onDiscChange }: Props) {
     setYellowPct,
     setEgg,
     setServings,
-    applyServings,
     toggleBooster,
   } = usePastaCalculator();
 
@@ -68,7 +67,7 @@ export default function Calculator({ disc, onDiscChange }: Props) {
   const feel = t.calc.feel[hydrationFeel(state.hydration)];
 
   const { waterToAddG } = result;
-  const servingsTooLarge = result.servingsFlourG > FLOUR_MAX_G;
+  const servingsTooLarge = result.servingsNeededG > FLOUR_MAX_G;
   const [boilMin, boilMax] = BOIL_MINUTES[disc];
 
   return (
@@ -76,15 +75,9 @@ export default function Calculator({ disc, onDiscChange }: Props) {
       <Section icon={<Users size={16} />} title={t.calc.servings}>
         <div className="space-y-3">
           <ServingsCounter servings={state.servings} onChange={setServings} />
+          <p className="text-sm font-semibold text-amber-400">{t.recipes.flourBatch(state.flourG)}</p>
           <p className="text-xs text-zinc-500">{t.calc.servingsHint}</p>
-          <button
-            type="button"
-            onClick={applyServings}
-            className="w-full rounded-lg bg-amber-400 py-2.5 font-semibold text-zinc-950 hover:bg-amber-300"
-          >
-            {t.calc.useFlour(Math.min(result.servingsFlourG, FLOUR_MAX_G))}
-          </button>
-          {servingsTooLarge && <p className="text-sm text-amber-300">{t.calc.tooLarge(result.servingsFlourG, FLOUR_MAX_G)}</p>}
+          {servingsTooLarge && <p className="text-sm text-amber-300">{t.calc.tooLarge(result.servingsNeededG, FLOUR_MAX_G)}</p>}
         </div>
       </Section>
 
@@ -121,15 +114,15 @@ export default function Calculator({ disc, onDiscChange }: Props) {
           <FlourRatioSlider
             yellowPct={state.yellowPct}
             split={result.split}
-            yellowName={defaultYellow?.name ?? t.calc.yellowFallback}
-            redName={defaultRed?.name ?? t.calc.redFallback}
+            yellowName={defaultYellow ? flourLabel(defaultYellow) : t.calc.yellowFallback}
+            redName={defaultRed ? flourLabel(defaultRed) : t.calc.redFallback}
             onChange={setYellowPct}
           />
         </div>
       </Section>
 
       <Section icon={<Sprout size={16} />} title={t.calc.boosters.title}>
-        <FlourBoosters boosters={state.boosters} split={result.split} onToggle={toggleBooster} />
+        <FlourBoosters flourG={state.flourG} boosters={state.boosters} split={result.split} onToggle={toggleBooster} />
       </Section>
 
       {result.warnings.length > 0 && (
@@ -278,7 +271,7 @@ export default function Calculator({ disc, onDiscChange }: Props) {
                 {t.calc.boil} · {t.discs[disc]}
               </div>
               <div className="text-4xl font-bold tabular-nums text-emerald-400">{t.calc.boilRange(boilMin, boilMax)}</div>
-              {disc === 'lasagna' && <div className="text-xs text-emerald-300/80">{t.calc.lasagnaNote}</div>}
+              {t.calc.boilNotes[disc] && <div className="text-xs text-emerald-300/80">{t.calc.boilNotes[disc]}</div>}
             </div>
           </div>
         </div>

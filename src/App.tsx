@@ -33,7 +33,7 @@ export default function App() {
   useEffect(() => saveJSON(STORAGE_KEYS.disc, disc), [disc]);
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col px-4 pb-24 pt-[max(1rem,env(safe-area-inset-top))]">
+    <div className="mx-auto flex min-h-dvh max-w-md select-none flex-col px-4 pb-24 pt-[max(1rem,env(safe-area-inset-top))]">
       <header className="mb-4 flex items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-amber-400">Lodi Pasta</h1>

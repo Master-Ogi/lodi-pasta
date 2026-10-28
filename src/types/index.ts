@@ -2,12 +2,12 @@ export type Language = 'en' | 'he' | 'pl';
 
 /** Yellow = durum semola (structure), Red = soft Tipo 00 (smoothness) */
 export interface BlendPreset {
-  id: 'artisanal-80' | 'gold-70' | 'balanced' | 'kids-soft';
+  id: 'artisanal-80' | 'gold-70' | 'balanced' | 'kids-soft' | 'semola-100';
   /** Percentage of Yellow flour (0–100). Red is the remainder. */
   yellowPct: number;
 }
 
-/** Optional flour boosters — each replaces part of the Red (Tipo 00) */
+/** Optional flour boosters — each replaces part of the Red (Tipo 00) only */
 export type BoosterId = 'lentil' | 'tapioca';
 export type Boosters = Record<BoosterId, boolean>;
 
@@ -24,7 +24,7 @@ export interface Servings {
   kids: number;
 }
 
-export type SafetyWarning = 'red-gummy' | 'yellow-brittle';
+export type SafetyWarning = 'red-gummy' | 'red-solo' | 'yellow-brittle';
 export type HydrationFeelKey = 'firm' | 'optimal' | 'soft';
 
 export interface CalculatorState {
@@ -44,8 +44,8 @@ export interface CalculatorResult {
   waterToAddG: number;
   split: FlourSplit;
   warnings: SafetyWarning[];
-  /** Flour batch recommended for the current servings */
-  servingsFlourG: number;
+  /** Flour the servings need before the 600g cap — above it, cook in several batches */
+  servingsNeededG: number;
 }
 
 export type Disc = 'spaghetti' | 'fettuccine' | 'penne' | 'lasagna' | 'angel-hair' | 'thick-round';
@@ -94,13 +94,18 @@ export interface FlourProfile {
   strengthW: number | null;
   hydrationPct: number | null;
   pairing: string | null;
+  /** Brand typed in by the user (Add Flour) */
+  brand?: string;
   inStock: boolean;
-  /** Added by the user (scan) — can be removed */
+  /** Added by the user (scan or Add Flour) — can be deleted */
   custom: boolean;
 }
 
 export type RecipeCategory = 'kids' | 'italian' | 'asian' | 'gourmet';
-export type Unit = 'g' | 'ml' | 'tbsp' | 'tsp' | 'pc' | 'clove';
+export type Unit = 'g' | 'ml' | 'tbsp' | 'tsp' | 'pc' | 'clove' | 'cup';
+
+/** Stock base used wherever a recipe calls for bouillon */
+export type BouillonType = 'paste' | 'powder';
 
 export type RecipeId =
   | 'burro-parm'
@@ -126,6 +131,10 @@ export type RecipeId =
 export interface IngredientAmount {
   qty?: number;
   unit?: Unit;
+  /** Grams per US cup — enables the kitchen-volume hint for gram ingredients (ml always converts) */
+  cupG?: number;
+  /** Bouillon stock: shown as warm water + dissolved bouillon from the pantry setting */
+  stock?: true;
 }
 
 export interface Recipe {

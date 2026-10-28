@@ -1,4 +1,14 @@
-import type { BlendPreset, BoosterId, Boosters, FlourSplit, HydrationFeelKey, SafetyWarning, Servings, Unit } from '../types';
+import type {
+  BlendPreset,
+  BoosterId,
+  Boosters,
+  BouillonType,
+  FlourSplit,
+  HydrationFeelKey,
+  SafetyWarning,
+  Servings,
+  Unit,
+} from '../types';
 
 export const FLOUR_STEP_G = 50;
 export const FLOUR_MIN_G = 200;
@@ -12,28 +22,37 @@ export const HYDRATION_MIN = 0.365;
 export const HYDRATION_MAX = 0.395;
 export const HYDRATION_STEP = 0.005;
 
-/** Dry flour per portion — already includes sleeve/disc residue */
-export const ADULT_FLOUR_G = 120;
-export const KID_FLOUR_G = 70;
+/** Dry flour per portion */
+export const ADULT_FLOUR_G = 100;
+export const KID_FLOUR_G = 75;
 
 export const RED_GUMMY_LIMIT_PCT = 70;
 
-export const DEFAULT_YELLOW_PCT = 80;
+/** Gold Spot 70/30 is the launch default */
+export const DEFAULT_YELLOW_PCT = 70;
 export const BLEND_PRESETS: BlendPreset[] = [
   { id: 'artisanal-80', yellowPct: 80 },
   { id: 'gold-70', yellowPct: 70 },
   { id: 'balanced', yellowPct: 50 },
   { id: 'kids-soft', yellowPct: 35 },
+  { id: 'semola-100', yellowPct: 100 },
 ];
 
 /** Every flour in the split is weighed in clean 5g steps. */
 export const FLOUR_SPLIT_STEP_G = 5;
 
-/** Booster share of the total flour, taken out of the Red (Tipo 00). */
+/** Booster share of the total flour, taken out of the Red (Tipo 00) only. */
 export const BOOSTER_PCT: Record<BoosterId, number> = { lentil: 15, tapioca: 8 };
 
 /** Color/flavor doses are defined per this flour weight (middle of the 350–400g reference batch). */
 export const COLOR_BASE_FLOUR_G = 375;
+
+/** Bouillon teaspoons per 250ml warm water */
+export const BOUILLON_TSP_PER_250ML: Record<BouillonType, number> = { paste: 0.5, powder: 1 };
+
+const CUP_ML = 240;
+const TBSP_PER_CUP = 16;
+const TSP_PER_TBSP = 3;
 
 export const clamp = (value: number, min: number, max: number): number =>
   Math.min(max, Math.max(min, value));
@@ -67,31 +86,38 @@ export function hydrationFeel(hydration: number): HydrationFeelKey {
 
 const roundToSplitStep = (grams: number): number => Math.round(grams / FLOUR_SPLIT_STEP_G) * FLOUR_SPLIT_STEP_G;
 
-/**
- * Split the total into Yellow / Red / boosters, each rounded to 5g, summing to flourG exactly.
- * Boosters come out of the Red so the Semola keeps its gluten structure;
- * Yellow only gives way if the Red runs out (e.g. 80/20 with both boosters).
- */
-export function splitFlour(flourG: number, yellowPct: number, boosters: Boosters): FlourSplit {
-  const lentilG = boosters.lentil ? roundToSplitStep((flourG * BOOSTER_PCT.lentil) / 100) : 0;
-  const tapiocaG = boosters.tapioca ? roundToSplitStep((flourG * BOOSTER_PCT.tapioca) / 100) : 0;
-  const yellowTargetG = roundToSplitStep((flourG * yellowPct) / 100);
-  const redG = Math.max(0, flourG - yellowTargetG - lentilG - tapiocaG);
-  return { yellowG: flourG - lentilG - tapiocaG - redG, redG, lentilG, tapiocaG };
+/** Booster weight before it is limited by the available Red. */
+export function boosterTargetG(flourG: number, id: BoosterId): number {
+  return roundToSplitStep((flourG * BOOSTER_PCT[id]) / 100);
 }
 
 /**
- * Flour = Adults×120g + Kids×70g, rounded UP to the next 50g batch.
- * May exceed FLOUR_MAX_G — caller should prompt for multiple batches.
+ * Split the total into Yellow / Red / boosters, each in 5g steps, summing to flourG exactly.
+ * The Semola is never touched: boosters come out of the Red only and are capped at what Red there is.
  */
-export function flourForServings({ adults, kids }: Servings): number {
+export function splitFlour(flourG: number, yellowPct: number, boosters: Boosters): FlourSplit {
+  const yellowG = roundToSplitStep((flourG * yellowPct) / 100);
+  const redRoomG = flourG - yellowG;
+  const lentilG = boosters.lentil ? Math.min(boosterTargetG(flourG, 'lentil'), redRoomG) : 0;
+  const tapiocaG = boosters.tapioca ? Math.min(boosterTargetG(flourG, 'tapioca'), redRoomG - lentilG) : 0;
+  return { yellowG, redG: redRoomG - lentilG - tapiocaG, lentilG, tapiocaG };
+}
+
+/** Adults×100g + Kids×75g, to the nearest 50g, at least 200g — before the 600g machine cap. */
+export function servingsFlourNeeded({ adults, kids }: Servings): number {
   const flourG = adults * ADULT_FLOUR_G + kids * KID_FLOUR_G;
-  return Math.max(FLOUR_MIN_G, Math.ceil(flourG / FLOUR_STEP_G) * FLOUR_STEP_G);
+  return Math.max(FLOUR_MIN_G, Math.round(flourG / FLOUR_STEP_G) * FLOUR_STEP_G);
+}
+
+/** Machine batch for the servings: 2 adults + 2 kids → 350g, 4 adults → 400g, 1 adult → 200g. */
+export function flourForServings(servings: Servings): number {
+  return Math.min(FLOUR_MAX_G, servingsFlourNeeded(servings));
 }
 
 export function safetyWarnings(yellowPct: number, eggG: number): SafetyWarning[] {
   const warnings: SafetyWarning[] = [];
-  if (100 - yellowPct > RED_GUMMY_LIMIT_PCT) warnings.push('red-gummy');
+  if (yellowPct === 0) warnings.push('red-solo');
+  else if (100 - yellowPct > RED_GUMMY_LIMIT_PCT) warnings.push('red-gummy');
   if (yellowPct === 100 && eggG <= 0) warnings.push('yellow-brittle');
   return warnings;
 }
@@ -111,4 +137,22 @@ export function scaleQty(qty: number, factor: number, unit?: Unit): number {
   const value = qty * factor;
   if (unit === 'g' || unit === 'ml') return value >= 100 ? Math.round(value / 5) * 5 : Math.max(1, Math.round(value));
   return Math.max(0.5, Math.round(value * 2) / 2);
+}
+
+/**
+ * Practical kitchen volume for a metric amount: cups to the quarter from ½ cup up,
+ * tablespoons to the half below that, teaspoons to the half below 1 tbsp.
+ */
+export function kitchenVolume(amount: number, unit: Unit | undefined, cupG?: number): { qty: number; unit: Unit } | null {
+  const perCup = unit === 'ml' ? CUP_ML : unit === 'g' ? cupG : undefined;
+  if (perCup === undefined) return null;
+  const tbsp = (amount / perCup) * TBSP_PER_CUP;
+  if (tbsp >= TBSP_PER_CUP / 2) return { qty: Math.round((tbsp / TBSP_PER_CUP) * 4) / 4, unit: 'cup' };
+  if (tbsp >= 1) return { qty: Math.round(tbsp * 2) / 2, unit: 'tbsp' };
+  return { qty: Math.max(0.5, Math.round(tbsp * TSP_PER_TBSP * 2) / 2), unit: 'tsp' };
+}
+
+/** Bouillon to dissolve in the given warm water, to the half teaspoon. */
+export function bouillonTsp(waterMl: number, type: BouillonType): number {
+  return Math.max(0.5, Math.round((waterMl / 250) * BOUILLON_TSP_PER_250ML[type] * 2) / 2);
 }

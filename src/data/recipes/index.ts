@@ -1,6 +1,7 @@
 import type { Recipe } from '../../types';
 
 // Quantities only. Ingredient names, steps and tips live in src/i18n/<lang>.ts at the same index.
+// cupG = grams per US cup (grated cheese, packed leaves, chopped veg) for the kitchen-volume hint.
 export const RECIPES: Recipe[] = [
   {
     id: 'burro-parm',
@@ -9,9 +10,9 @@ export const RECIPES: Recipe[] = [
     baseServings: 4,
     minutes: 15,
     ingredients: [
-      { qty: 60, unit: 'g' }, // butter
-      { qty: 80, unit: 'g' }, // parmigiano
-      { qty: 250, unit: 'ml' }, // bouillon
+      { qty: 60, unit: 'g', cupG: 227 }, // butter
+      { qty: 80, unit: 'g', cupG: 80 }, // parmigiano
+      { qty: 250, unit: 'ml', stock: true }, // bouillon
       {}, // black pepper
       {}, // salt
     ],
@@ -42,8 +43,8 @@ export const RECIPES: Recipe[] = [
       { qty: 150, unit: 'g' }, // guanciale
       { qty: 4, unit: 'pc' }, // egg yolks
       { qty: 1, unit: 'pc' }, // whole egg
-      { qty: 60, unit: 'g' }, // pecorino
-      { qty: 20, unit: 'g' }, // parmigiano
+      { qty: 60, unit: 'g', cupG: 80 }, // pecorino
+      { qty: 20, unit: 'g', cupG: 80 }, // parmigiano
       { qty: 1, unit: 'tsp' }, // black pepper
     ],
   },
@@ -60,10 +61,10 @@ export const RECIPES: Recipe[] = [
       { qty: 120, unit: 'ml' }, // white wine
       { qty: 150, unit: 'ml' }, // milk (ragù)
       { qty: 400, unit: 'ml' }, // passata
-      { qty: 50, unit: 'g' }, // butter (béchamel)
-      { qty: 50, unit: 'g' }, // flour (béchamel)
+      { qty: 50, unit: 'g', cupG: 227 }, // butter (béchamel)
+      { qty: 50, unit: 'g', cupG: 125 }, // flour (béchamel)
       { qty: 600, unit: 'ml' }, // milk (béchamel)
-      { qty: 100, unit: 'g' }, // parmigiano
+      { qty: 100, unit: 'g', cupG: 80 }, // parmigiano
       {}, // nutmeg
     ],
   },
@@ -88,11 +89,11 @@ export const RECIPES: Recipe[] = [
     baseServings: 4,
     minutes: 15,
     ingredients: [
-      { qty: 60, unit: 'g' }, // basil
-      { qty: 30, unit: 'g' }, // pine nuts
+      { qty: 60, unit: 'g', cupG: 24 }, // basil
+      { qty: 30, unit: 'g', cupG: 135 }, // pine nuts
       { qty: 1, unit: 'clove' }, // garlic
-      { qty: 50, unit: 'g' }, // parmigiano
-      { qty: 20, unit: 'g' }, // pecorino
+      { qty: 50, unit: 'g', cupG: 80 }, // parmigiano
+      { qty: 20, unit: 'g', cupG: 80 }, // pecorino
       { qty: 120, unit: 'ml' }, // olive oil
     ],
   },
@@ -103,7 +104,7 @@ export const RECIPES: Recipe[] = [
     baseServings: 4,
     minutes: 15,
     ingredients: [
-      { qty: 150, unit: 'g' }, // pecorino
+      { qty: 150, unit: 'g', cupG: 80 }, // pecorino
       { qty: 2, unit: 'tsp' }, // peppercorns
       {}, // salt
     ],
@@ -119,7 +120,7 @@ export const RECIPES: Recipe[] = [
       { qty: 3, unit: 'clove' }, // garlic
       { qty: 1, unit: 'tsp' }, // chili flakes
       { qty: 1, unit: 'tbsp' }, // tomato paste
-      { qty: 400, unit: 'g' }, // crushed tomatoes
+      { qty: 400, unit: 'g', cupG: 240 }, // crushed tomatoes
       { qty: 2, unit: 'tbsp' }, // parsley
     ],
   },
@@ -130,11 +131,11 @@ export const RECIPES: Recipe[] = [
     baseServings: 4,
     minutes: 25,
     ingredients: [
-      { qty: 40, unit: 'g' }, // butter
-      { qty: 30, unit: 'g' }, // flour
+      { qty: 40, unit: 'g', cupG: 227 }, // butter
+      { qty: 30, unit: 'g', cupG: 125 }, // flour
       { qty: 500, unit: 'ml' }, // milk
-      { qty: 200, unit: 'g' }, // cheddar
-      { qty: 40, unit: 'g' }, // parmigiano
+      { qty: 200, unit: 'g', cupG: 113 }, // cheddar
+      { qty: 40, unit: 'g', cupG: 80 }, // parmigiano
       { qty: 0.5, unit: 'tsp' }, // mustard powder
     ],
   },
@@ -145,10 +146,10 @@ export const RECIPES: Recipe[] = [
     baseServings: 4,
     minutes: 15,
     ingredients: [
-      { qty: 30, unit: 'g' }, // butter
+      { qty: 30, unit: 'g', cupG: 227 }, // butter
       { qty: 3, unit: 'clove' }, // garlic
       { qty: 250, unit: 'ml' }, // cream
-      { qty: 50, unit: 'g' }, // parmigiano
+      { qty: 50, unit: 'g', cupG: 80 }, // parmigiano
       {}, // nutmeg
     ],
   },
@@ -163,8 +164,8 @@ export const RECIPES: Recipe[] = [
       { qty: 2, unit: 'pc' }, // carrots
       { qty: 2, unit: 'pc' }, // celery
       { qty: 1, unit: 'pc' }, // onion
-      { qty: 1500, unit: 'ml' }, // stock
-      { qty: 20, unit: 'g' }, // butter
+      { qty: 1500, unit: 'ml', stock: true }, // stock
+      { qty: 20, unit: 'g', cupG: 227 }, // butter
       { qty: 2, unit: 'tbsp' }, // parsley
     ],
   },
@@ -175,14 +176,14 @@ export const RECIPES: Recipe[] = [
     baseServings: 4,
     minutes: 30,
     ingredients: [
-      { qty: 1400, unit: 'ml' }, // chicken stock
+      { qty: 1400, unit: 'ml', stock: true }, // chicken stock
       { qty: 4, unit: 'tbsp' }, // white miso
       { qty: 2, unit: 'tbsp' }, // soy
       { qty: 1, unit: 'tbsp' }, // sesame oil
       { qty: 2, unit: 'clove' }, // garlic
-      { qty: 10, unit: 'g' }, // ginger
+      { qty: 10, unit: 'g', cupG: 96 }, // ginger
       { qty: 4, unit: 'pc' }, // eggs
-      { qty: 150, unit: 'g' }, // corn
+      { qty: 150, unit: 'g', cupG: 150 }, // corn
       { qty: 3, unit: 'pc' }, // spring onions
       { qty: 2, unit: 'pc' }, // nori
     ],
@@ -212,9 +213,9 @@ export const RECIPES: Recipe[] = [
     minutes: 60,
     ingredients: [
       { qty: 400, unit: 'g' }, // pork
-      { qty: 300, unit: 'g' }, // napa cabbage
+      { qty: 300, unit: 'g', cupG: 75 }, // napa cabbage
       { qty: 1, unit: 'tsp' }, // salt
-      { qty: 15, unit: 'g' }, // ginger
+      { qty: 15, unit: 'g', cupG: 96 }, // ginger
       { qty: 3, unit: 'pc' }, // spring onions
       { qty: 2, unit: 'tbsp' }, // soy
       { qty: 1, unit: 'tbsp' }, // shaoxing
@@ -254,7 +255,7 @@ export const RECIPES: Recipe[] = [
       { qty: 0.5, unit: 'tsp' }, // fennel seeds
       { qty: 100, unit: 'ml' }, // white wine
       { qty: 200, unit: 'ml' }, // cream
-      { qty: 50, unit: 'g' }, // parmigiano
+      { qty: 50, unit: 'g', cupG: 80 }, // parmigiano
       {}, // lemon zest
     ],
   },
@@ -268,7 +269,7 @@ export const RECIPES: Recipe[] = [
       { qty: 600, unit: 'g' }, // seafood
       { qty: 4, unit: 'tbsp' }, // olive oil
       { qty: 3, unit: 'clove' }, // garlic
-      { qty: 250, unit: 'g' }, // cherry tomatoes
+      { qty: 250, unit: 'g', cupG: 150 }, // cherry tomatoes
       { qty: 120, unit: 'ml' }, // white wine
       { qty: 0.5, unit: 'tsp' }, // chili flakes
       { qty: 2, unit: 'tbsp' }, // parsley
@@ -281,14 +282,14 @@ export const RECIPES: Recipe[] = [
     baseServings: 4,
     minutes: 25,
     ingredients: [
-      { qty: 400, unit: 'g' }, // mushrooms
-      { qty: 40, unit: 'g' }, // butter
+      { qty: 400, unit: 'g', cupG: 70 }, // mushrooms
+      { qty: 40, unit: 'g', cupG: 227 }, // butter
       { qty: 1, unit: 'pc' }, // shallot
       { qty: 2, unit: 'clove' }, // garlic
       { qty: 1, unit: 'tsp' }, // thyme
       { qty: 80, unit: 'ml' }, // marsala
       { qty: 150, unit: 'ml' }, // cream
-      { qty: 50, unit: 'g' }, // parmigiano
+      { qty: 50, unit: 'g', cupG: 80 }, // parmigiano
       { qty: 1, unit: 'tsp' }, // truffle oil
     ],
   },

@@ -1,3 +1,4 @@
+import { Info } from 'lucide-react';
 import { BLEND_PRESETS } from '../utils/math';
 import { useTranslation } from '../i18n';
 import type { FlourSplit } from '../types';
@@ -47,14 +48,21 @@ export default function FlourRatioSlider({ yellowPct, split, yellowName, redName
         className="w-full accent-amber-400"
       />
 
+      {yellowPct === 100 && (
+        <span className="inline-flex items-center gap-1 rounded-full bg-yellow-500/15 px-3 py-1 text-xs font-semibold text-yellow-300">
+          <Info size={12} />
+          {t.calc.semolaSolo}
+        </span>
+      )}
+
       <div className="grid grid-cols-2 gap-3 text-sm">
         <div className="min-w-0 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3">
-          <div className="truncate text-yellow-300">{yellowName}</div>
+          <div className="line-clamp-2 min-h-10 break-words leading-5 text-yellow-300">{yellowName}</div>
           <div className="text-xs text-yellow-300/70">{t.num(share(split.yellowG))}%</div>
           <div className="text-2xl font-semibold tabular-nums">{t.g(split.yellowG)}</div>
         </div>
         <div className="min-w-0 rounded-lg border border-red-500/30 bg-red-500/10 p-3">
-          <div className="truncate text-red-300">{redName}</div>
+          <div className="line-clamp-2 min-h-10 break-words leading-5 text-red-300">{redName}</div>
           <div className="text-xs text-red-300/70">{t.num(share(split.redG))}%</div>
           <div className="text-2xl font-semibold tabular-nums">{t.g(split.redG)}</div>
         </div>

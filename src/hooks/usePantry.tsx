@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import type { FlourAnalysis, FlourProfile, Wheat } from '../types';
+import type { BouillonType, FlourAnalysis, FlourProfile, Wheat } from '../types';
 import { STORAGE_KEYS, loadJSON, saveJSON } from '../utils/storage';
 
 /** One default per role: Yellow = durum (structure), Red = soft wheat (softness). */
@@ -39,6 +39,21 @@ function loadPantry(): PantryState {
   return { flours: saved.flours, defaults: { ...SEED.defaults, ...saved.defaults } };
 }
 
+/** Fields from the "+ Add Flour" form */
+export interface NewFlour {
+  name: string;
+  brand: string;
+  wheat: Wheat;
+  inStock: boolean;
+}
+
+/** Brand shown in front of the name when the user typed one */
+export const flourLabel = (f: FlourProfile): string => (f.brand ? `${f.brand} ${f.name}` : f.name);
+
+function loadBouillon(): BouillonType {
+  return loadJSON<string>(STORAGE_KEYS.bouillon, '') === 'powder' ? 'powder' : 'paste';
+}
+
 interface PantryValue {
   flours: FlourProfile[];
   defaults: Defaults;
@@ -48,14 +63,19 @@ interface PantryValue {
   setDefault: (id: string) => void;
   remove: (id: string) => void;
   addFromAnalysis: (a: FlourAnalysis) => void;
+  addCustom: (f: NewFlour) => void;
+  bouillon: BouillonType;
+  setBouillon: (type: BouillonType) => void;
 }
 
 const PantryContext = createContext<PantryValue | null>(null);
 
 export function PantryProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<PantryState>(loadPantry);
+  const [bouillon, setBouillon] = useState<BouillonType>(loadBouillon);
 
   useEffect(() => saveJSON(STORAGE_KEYS.pantry, state), [state]);
+  useEffect(() => saveJSON(STORAGE_KEYS.bouillon, bouillon), [bouillon]);
 
   const find = (id: string | null) => state.flours.find((f) => f.id === id);
 
@@ -98,6 +118,28 @@ export function PantryProvider({ children }: { children: ReactNode }) {
           },
         ],
       })),
+    addCustom: ({ name, brand, wheat, inStock }) =>
+      setState((s) => ({
+        ...s,
+        flours: [
+          ...s.flours,
+          {
+            id: `custom-${Date.now()}`,
+            name: name.trim(),
+            brand: brand.trim() || undefined,
+            grade: '',
+            wheat,
+            proteinPct: null,
+            strengthW: null,
+            hydrationPct: null,
+            pairing: null,
+            inStock,
+            custom: true,
+          },
+        ],
+      })),
+    bouillon,
+    setBouillon,
   };
 
   return <PantryContext.Provider value={value}>{children}</PantryContext.Provider>;

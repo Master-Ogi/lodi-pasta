@@ -134,7 +134,7 @@ export default function ChefAssistant() {
             }`}
           >
             {m.image && <img src={m.image} alt="" className="mb-2 max-h-48 rounded-lg" />}
-            {m.flour ? <FlourAnalysisCard analysis={m.flour} /> : <p className="whitespace-pre-wrap">{m.text}</p>}
+            {m.flour ? <FlourAnalysisCard analysis={m.flour} /> : <p className="select-text whitespace-pre-wrap">{m.text}</p>}
           </div>
         ))}
         {loading && (

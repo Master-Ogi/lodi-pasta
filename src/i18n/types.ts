@@ -2,6 +2,7 @@ import type {
   AdditionId,
   BlendPreset,
   BoosterId,
+  BouillonType,
   ColorId,
   Disc,
   HydrationFeelKey,
@@ -37,12 +38,18 @@ export interface Dictionary {
     fewer: (label: string) => string;
     more: (label: string) => string;
     servingsHint: string;
-    useFlour: (g: number) => string;
     tooLarge: (needed: number, max: number) => string;
     flour: string;
     flourAria: string;
     presets: Record<BlendPreset['id'], string>;
-    boosters: { title: string; hint: string; names: Record<BoosterId, string>; badges: Record<BoosterId, string> };
+    semolaSolo: string;
+    boosters: {
+      title: string;
+      hint: string;
+      capped: string;
+      names: Record<BoosterId, string>;
+      badges: Record<BoosterId, string>;
+    };
     yellowFallback: string;
     redFallback: string;
     ratioAria: string;
@@ -50,7 +57,8 @@ export interface Dictionary {
     disc: string;
     boil: string;
     boilRange: (min: number, max: number) => string;
-    lasagnaNote: string;
+    /** Extra cue next to a disc's boil time */
+    boilNotes: Partial<Record<Disc, string>>;
     liquid: string;
     totalLiquid: string;
     golden: string;
@@ -91,7 +99,6 @@ export interface Dictionary {
     soft: string;
     protein: (pct: number) => string;
     strength: (w: number) => string;
-    remove: string;
     camera: string;
     scanning: string;
     needKey: string;
@@ -99,6 +106,18 @@ export interface Dictionary {
     added: string;
     recHydration: (pct: number) => string;
     pairing: string;
+    addFlour: string;
+    addTitle: string;
+    nameLabel: string;
+    brandLabel: string;
+    roleLabel: string;
+    roleYellow: string;
+    roleRed: string;
+    save: string;
+    cancel: string;
+    deleteConfirm: string;
+    delete: string;
+    bouillon: { title: string } & Record<BouillonType, string>;
   };
 
   recipes: {
@@ -114,6 +133,11 @@ export interface Dictionary {
     boilFor: (range: string) => string;
     notPaired: (disc: string) => string;
     toTaste: string;
+    /** Kitchen-volume hint next to a metric amount */
+    approx: (volume: string) => string;
+    bouillonName: Record<BouillonType, string>;
+    stockLine: (water: string, dose: string, base: string) => string;
+    bouillonStep: Record<BouillonType, (water: string, dose: string) => string>;
     items: Record<RecipeId, RecipeText>;
   };
 

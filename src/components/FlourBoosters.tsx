@@ -1,6 +1,6 @@
-import { Check } from 'lucide-react';
+import { AlertTriangle, Check } from 'lucide-react';
 import { useTranslation } from '../i18n';
-import { BOOSTER_PCT } from '../utils/math';
+import { BOOSTER_PCT, boosterTargetG } from '../utils/math';
 import type { BoosterId, Boosters, FlourSplit } from '../types';
 
 const BOOSTERS: { id: BoosterId; grams: (split: FlourSplit) => number; active: string; badge: string }[] = [
@@ -19,13 +19,16 @@ const BOOSTERS: { id: BoosterId; grams: (split: FlourSplit) => number; active: s
 ];
 
 interface Props {
+  flourG: number;
   boosters: Boosters;
   split: FlourSplit;
   onToggle: (id: BoosterId) => void;
 }
 
-export default function FlourBoosters({ boosters, split, onToggle }: Props) {
+export default function FlourBoosters({ flourG, boosters, split, onToggle }: Props) {
   const { t } = useTranslation();
+  // Boosters only ever take Tipo 00 — when there isn't enough, they shrink instead of eating the Semola.
+  const capped = BOOSTERS.some(({ id, grams }) => boosters[id] && grams(split) < boosterTargetG(flourG, id));
 
   return (
     <div className="space-y-2">
@@ -60,6 +63,12 @@ export default function FlourBoosters({ boosters, split, onToggle }: Props) {
           </button>
         );
       })}
+      {capped && (
+        <p className="flex items-center gap-2 text-sm text-amber-300">
+          <AlertTriangle size={14} className="shrink-0" />
+          {t.calc.boosters.capped}
+        </p>
+      )}
       <p className="text-xs text-zinc-500">{t.calc.boosters.hint}</p>
     </div>
   );

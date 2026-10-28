@@ -1,5 +1,5 @@
 // Lodi Pasta service worker — offline app shell for the kitchen.
-const CACHE = 'lodi-pasta-v1.2.0-build.005';
+const CACHE = 'lodi-pasta-v1.3.0-build.006';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon.svg', './icons/icon-192.png'];
 
 self.addEventListener('install', (event) => {

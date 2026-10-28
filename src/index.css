@@ -18,3 +18,21 @@ input[type="number"]::-webkit-outer-spin-button {
 input[type="number"] {
   -moz-appearance: textfield;
 }
+
+/* Tapping chips, buttons or disc names must never open Android Chrome's text-selection / Touch-to-Search overlay.
+   The app root carries `select-none`; typed fields and chef replies opt back in. */
+button,
+[role="button"],
+[role="radio"],
+[role="switch"],
+label {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+input,
+textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
