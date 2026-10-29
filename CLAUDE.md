@@ -1,4 +1,4 @@
-# CLAUDE.md — Lodi Pasta (v1.3.0-build.006)
+# CLAUDE.md — Lodi Pasta (v1.4.0-build.007)
 
 ## Attention & Identity Guardrail
 - The user is **Mr Ogi**. Always address him as Mr Ogi in all summaries, log headers, and completions.
@@ -33,14 +33,31 @@
 Lodi Pasta is a mobile-first kitchen companion web application and installable PWA tailored specifically for the Philips 7000 Series Pasta Maker.
 
 - **Framework**: Vite + React 18 + TypeScript
-- **Styling**: Tailwind CSS v4 (Dark Mode by default: zinc-900 / zinc-950 background with amber-400 accent). Use logical properties (`ms-`/`me-`/`ps-`/`text-start`) and `rtl:` variants so layouts mirror in Hebrew.
+- **Styling**: Tailwind CSS v4 with a 5-theme token engine (see §2a). Default theme `classic-dark`: zinc-900 / zinc-950 background with amber-400 accent. Use logical properties (`ms-`/`me-`/`ps-`/`text-start`) and `rtl:` variants so layouts mirror in Hebrew.
 - **Icons**: `lucide-react`
 - **i18n**: English, Hebrew (RTL) and Polish dictionaries in `src/i18n/`. Every user-facing string lives there — never hard-code UI text in components. Hebrew is stored in logical order.
-- **State & Storage**: React state + context (`I18nProvider`, `PantryProvider`, `CalculatorProvider`) + `localStorage` (`lodi.*` keys) for language, disc, pantry, stock base, colors and the Gemini key. The calculator is NOT persisted — every launch starts fresh (see §3).
+- **State & Storage**: React state + context (`I18nProvider`, `PantryProvider`, `CalculatorProvider`) + `localStorage` (`lodi.*` keys) for language, theme, disc, pantry, stock base, colors and the Gemini key. The calculator is NOT persisted — every launch starts fresh (see §3).
 - **Touch UX**: The app root is `select-none` (plus `user-select: none` on buttons/chips/labels in `index.css`) so taps never trigger Android Chrome's text-selection / Touch-to-Search overlay. Inputs and chef replies opt back in with `select-text`.
 - **AI**: Gemini REST API with the user's own key (BYOK) for the chef chat and flour-label photo analysis. The key is sent only to Google.
 - **Hardware Integration**: Screen Wake Lock API (`navigator.wakeLock`) and the rear camera (`capture="environment"`).
 - **PWA**: `public/sw.js` app-shell cache, registered in production only. Cache key = `lodi-pasta-v<version>`.
+- **Fonts**: `@fontsource/inter` (400–700) and `@fontsource/playfair-display` (600/700), imported in `index.css`.
+
+## 2a. Theme Token Engine & Design Guidelines
+- **Mechanism**: `useTheme` (`src/hooks/useTheme.ts`) sets `<html data-theme="…">`, the `dark` class, `color-scheme` and `<meta name="theme-color">` in a layout effect (no flash), and persists to `lodi.theme`. The selector is `ThemeSelector` (palette button in the header → bottom sheet with live mini-previews drawn from `src/data/themes.ts`).
+- **Tokens**: components are written ONLY against Tailwind's `zinc` (surfaces/text) and `amber` (accent) scales. Each theme remaps Tailwind's own `--color-zinc-*` / `--color-amber-*` variables under `:root[data-theme="…"]` in `index.css`, so every utility (including `/60` opacity modifiers) follows the theme. Never hard-code hex colors in components (the theme previews are the only exception).
+- **Scale roles**: `950` page · `900` card · `800` chip & 1px border · `700` hover & slider track · `600–500` muted · `400–300` body · `200–100` strong text. `text-zinc-950` is the on-accent ink (dark on amber in dark themes, light on terracotta in light themes). Need true black? Use `bg-black`.
+- **Status colors**: light themes deepen `red/yellow/sky/orange/emerald` 200–400 so warnings stay legible; Trattoria maps emerald to olive.
+- **Themes**:
+  1. `classic-dark` — Tailwind's own palette, no overrides (the baseline).
+  2. `bottega-carta` — parchment `#FAF6F0`, white cards, espresso `#231815` text, terracotta `#C85A32` accent, Playfair serif headers.
+  3. `trattoria-quadri` — cream `#FFFDF9` cards, gingham-red `#9E2A2B` accent, olive `#4F6D42` badges, faint gingham body, serif headers.
+  4. `linear-obsidian` — `#080808`, 1px `rgba(255,255,255,0.08)` hairlines, yellow `#FFD60A` signal, monospaced `.tabular-nums` weights.
+  5. `cucina-mediterranea` — sage `#EDF1EC`, linen `#FDFDFB` cards, terracotta `#B85A3C` accent.
+- **Typography**: Inter body in all themes except `classic-dark` (system stack). Serif headers only in Bottega / Trattoria. Hebrew (`lang="he"`) always uses the Hebrew sans stack (`--font-hebrew`: Heebo / Alef / system-ui), headers included.
+- **Micro-physics**: every `button` / `[role=button]` depresses to `scale: 0.97` over 150ms ease-out (global rule in `index.css` — don't add per-component `active:` classes). Range sliders use a themed track and a springy thumb (`cubic-bezier(0.34,1.56,0.64,1)`). All motion respects `prefers-reduced-motion`.
+- **Navigation**: a floating frosted pill (`backdrop-blur-md`) above the safe area; the active tab gets an accent tint and a dot indicator.
+- **Adding a theme**: add the id to `ThemeId`, a spec to `THEMES`, names/blurbs to all three dictionaries, and a `:root[data-theme]` token block in `index.css`.
 
 ---
 
@@ -132,7 +149,7 @@ Lodi Pasta is a mobile-first kitchen companion web application and installable P
 
 ## 5. Build Numbering & Release Tracking
 - **Version Tracking**: Track builds in `package.json` and display in app footer. Keep the service worker cache key in `public/sw.js` in step with the version.
-- **Format**: `v[Major].[Minor].[Patch]-build.[Increment]` (Starting at `v1.0.0-build.001`; current `v1.3.0-build.006`).
+- **Format**: `v[Major].[Minor].[Patch]-build.[Increment]` (Starting at `v1.0.0-build.001`; current `v1.4.0-build.007`).
 - **Rule**: Whenever introducing a new feature, component, or calculation fix, increment the build counter by 1.
 
 ---
@@ -154,14 +171,17 @@ lodi-pasta/
 │   │   ├── FlourAnalysisCard.tsx   # Flour label result + "Add to My Pantry"
 │   │   ├── CameraButton.tsx        # Rear camera file input
 │   │   ├── LanguageSelector.tsx    # EN | עב | PL
+│   │   ├── ThemeSelector.tsx       # Palette button + theme sheet with live previews
 │   │   └── WakeLockToggle.tsx      # Screen wake lock toggle
 │   ├── data/
 │   │   ├── colors.ts               # Color/flavor additions and zones
 │   │   ├── discs.ts                # Discs and boil times
+│   │   ├── themes.ts               # Theme list + preview swatches
 │   │   └── recipes/index.ts        # 18 language-neutral recipes (text in i18n)
 │   ├── hooks/
 │   │   ├── usePastaCalculator.tsx  # CalculatorProvider — shared core state machine
 │   │   ├── usePantry.tsx           # Flour pantry + stock base context
+│   │   ├── useTheme.ts             # Active theme → <html data-theme>, persisted
 │   │   └── useWakeLock.ts          # Screen wake lock manager
 │   ├── i18n/
 │   │   ├── index.tsx               # I18nProvider, useTranslation, dir/lang
@@ -176,7 +196,7 @@ lodi-pasta/
 │   │   └── storage.ts              # Safe localStorage helpers
 │   ├── App.tsx                     # Main layout & navigation
 │   ├── main.tsx
-│   └── index.css
+│   └── index.css                   # Theme token engine, fonts, micro-physics
 ├── public/                         # manifest, sw.js, icons
 ├── CLAUDE.md
 ├── package.json

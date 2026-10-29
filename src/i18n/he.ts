@@ -30,6 +30,26 @@ export const he: Dictionary = {
     language: 'שפה',
   },
 
+  theme: {
+    title: 'ערכת עיצוב',
+    open: 'בחירת ערכת עיצוב',
+    close: 'סגירה',
+    names: {
+      'classic-dark': 'קלאסי כהה',
+      'bottega-carta': 'בוטגה קרטה',
+      'trattoria-quadri': 'טרטוריה משובצת',
+      'linear-obsidian': 'אובסידיאן מינימלי',
+      'cucina-mediterranea': 'מטבח ים־תיכוני',
+    },
+    blurbs: {
+      'classic-dark': 'מטבח לילי אפור עם נגיעות ענבר',
+      'bottega-carta': 'קלף קמח, דיו אספרסו וטרקוטה',
+      'trattoria-quadri': 'קרם ביסטרו, משבצות אדומות ועשבי זית',
+      'linear-obsidian': 'זכוכית שחורה, קווים דקים ואות צהוב',
+      'cucina-mediterranea': 'מרווה רכה, פשתן טבעי וטרקוטה',
+    },
+  },
+
   calc: {
     servings: 'מנות',
     adults: 'מבוגרים',

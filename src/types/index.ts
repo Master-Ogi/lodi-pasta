@@ -1,4 +1,5 @@
 export type Language = 'en' | 'he' | 'pl';
+export type ThemeId = 'classic-dark' | 'bottega-carta' | 'trattoria-quadri' | 'linear-obsidian' | 'cucina-mediterranea';
 
 /** Yellow = durum semola (structure), Red = soft Tipo 00 (smoothness) */
 export interface BlendPreset {

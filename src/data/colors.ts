@@ -22,7 +22,7 @@ export const COLOR_FLAVORS: ColorFlavor[] = [
   },
   {
     id: 'black',
-    swatch: 'bg-zinc-950 ring-1 ring-zinc-600',
+    swatch: 'bg-black ring-1 ring-zinc-600',
     additions: [{ id: 'squidInk', zone: 'liquid', spoon: { qty: 1, unit: 'tsp' } }],
   },
   {

@@ -25,4 +25,5 @@ export const STORAGE_KEYS = {
   pantry: 'lodi.pantry',
   colors: 'lodi.colors',
   bouillon: 'lodi.bouillon',
+  theme: 'lodi.theme',
 } as const;

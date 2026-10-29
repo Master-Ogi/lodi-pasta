@@ -1,4 +1,15 @@
 @import "tailwindcss";
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
+@import "@fontsource/playfair-display/600.css";
+@import "@fontsource/playfair-display/700.css";
+
+@theme {
+  --font-serif: "Playfair Display", ui-serif, Georgia, serif;
+  --font-hebrew: "Heebo", "Alef", "Assistant", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+}
 
 :root {
   color-scheme: dark;
@@ -7,6 +18,223 @@
 body {
   @apply bg-zinc-950 text-zinc-100 antialiased;
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* ───────────────────────── Theme token engine ─────────────────────────
+   Components are written against Tailwind's zinc (surfaces/text) and amber (accent) scales.
+   Each theme remaps those --color-* tokens on <html data-theme>, so every utility —
+   including opacity modifiers like bg-zinc-950/60 — follows the theme with no class changes.
+   Scale roles: 950 page · 900 card · 800 chip/border · 700 hover/track · 600–500 muted · 400–300 body · 200–100 strong.
+   `text-zinc-950` is the "on-accent" ink. classic-dark defines nothing: it is Tailwind's own palette. */
+
+:root[data-theme="bottega-carta"] {
+  --color-zinc-950: #FAF6F0;
+  --color-zinc-900: #FFFFFF;
+  --color-zinc-800: #ECE4DA;
+  --color-zinc-700: #E0D4C5;
+  --color-zinc-600: #A8998C;
+  --color-zinc-500: #8A7A6E;
+  --color-zinc-400: #6B5A4E;
+  --color-zinc-300: #4A3A31;
+  --color-zinc-200: #352722;
+  --color-zinc-100: #231815;
+  --color-amber-400: #C85A32;
+  --color-amber-300: #A9482A;
+  --color-amber-100: #2E1F18;
+}
+
+:root[data-theme="trattoria-quadri"] {
+  --color-zinc-950: #F6EFE4;
+  --color-zinc-900: #FFFDF9;
+  --color-zinc-800: #EADFD0;
+  --color-zinc-700: #DCCDB9;
+  --color-zinc-600: #A69484;
+  --color-zinc-500: #8C7B6F;
+  --color-zinc-400: #6E5D52;
+  --color-zinc-300: #4D3D35;
+  --color-zinc-200: #382A25;
+  --color-zinc-100: #2A1D1A;
+  --color-amber-400: #9E2A2B;
+  --color-amber-300: #842223;
+  --color-amber-100: #6E1F20;
+  /* Olive herb badges */
+  --color-emerald-300: #45603A;
+  --color-emerald-400: #4F6D42;
+}
+
+:root[data-theme="linear-obsidian"] {
+  --color-zinc-950: #080808;
+  --color-zinc-900: #0F0F0F;
+  /* Hairlines: 1px white at 8% — doubles as the frosted chip fill */
+  --color-zinc-800: rgba(255, 255, 255, 0.08);
+  --color-zinc-700: rgba(255, 255, 255, 0.14);
+  --color-zinc-600: #5C5C5C;
+  --color-zinc-500: #7A7A7A;
+  --color-zinc-400: #9A9A9A;
+  --color-zinc-300: #C8C8C8;
+  --color-zinc-200: #E2E2E2;
+  --color-zinc-100: #F2F2F2;
+  --color-amber-400: #FFD60A;
+  --color-amber-300: #FFE14D;
+  --color-amber-100: #FFF3B0;
+}
+
+:root[data-theme="cucina-mediterranea"] {
+  --color-zinc-950: #EDF1EC;
+  --color-zinc-900: #FDFDFB;
+  --color-zinc-800: #DCE3DA;
+  --color-zinc-700: #CBD5C9;
+  --color-zinc-600: #9AA89B;
+  --color-zinc-500: #6F7F71;
+  --color-zinc-400: #536355;
+  --color-zinc-300: #3C4A3E;
+  --color-zinc-200: #2D3A2F;
+  --color-zinc-100: #1F2A22;
+  --color-amber-400: #B85A3C;
+  --color-amber-300: #9E4A30;
+  --color-amber-100: #7E3A24;
+}
+
+/* Light themes: the dark theme's pastel status inks would vanish on parchment — deepen them. */
+:root[data-theme="bottega-carta"],
+:root[data-theme="trattoria-quadri"],
+:root[data-theme="cucina-mediterranea"] {
+  color-scheme: light;
+  --color-red-200: #8F2D22;
+  --color-red-300: #9E3426;
+  --color-red-400: #C0483A;
+  --color-yellow-300: #8A6A0F;
+  --color-yellow-400: #B88A12;
+  --color-sky-300: #2B6A99;
+  --color-orange-300: #A8521E;
+}
+:root[data-theme="bottega-carta"],
+:root[data-theme="cucina-mediterranea"] {
+  --color-emerald-300: #2F6B4F;
+  --color-emerald-400: #2F7A57;
+}
+
+/* Sans body for the four designed themes (Hebrew overrides below). */
+:root[data-theme]:not([data-theme="classic-dark"]) body {
+  font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-feature-settings: "cv11", "ss01";
+}
+
+/* Italian culinary booklet: serif headers */
+:root[data-theme="bottega-carta"] :is(h1, h2, h3),
+:root[data-theme="trattoria-quadri"] :is(h1, h2, h3) {
+  font-family: var(--font-serif);
+  letter-spacing: 0.01em;
+}
+
+/* Subtle trattoria tablecloth */
+:root[data-theme="trattoria-quadri"] body {
+  background-image:
+    linear-gradient(90deg, rgba(158, 42, 43, 0.045) 50%, transparent 50%),
+    linear-gradient(rgba(158, 42, 43, 0.045) 50%, transparent 50%);
+  background-size: 28px 28px;
+}
+
+/* Obsidian: a faint top glow so frosted layers read as glass; monospaced weight displays */
+:root[data-theme="linear-obsidian"] body {
+  background-image: radial-gradient(120% 60% at 50% -10%, rgba(255, 255, 255, 0.06), transparent 60%);
+  background-attachment: fixed;
+}
+:root[data-theme="linear-obsidian"] .tabular-nums {
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  letter-spacing: -0.03em;
+}
+
+/* Hebrew: Playfair/Inter carry no Hebrew glyphs — use a clean Hebrew sans everywhere, headers included. */
+:root[lang="he"] body,
+:root[lang="he"] :is(h1, h2, h3) {
+  font-family: var(--font-hebrew);
+  letter-spacing: normal;
+}
+
+/* ───────────────────────── Tactile micro-physics ───────────────────────── */
+button,
+[role="button"] {
+  transition-property: color, background-color, border-color, box-shadow, opacity, scale;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+button:not(:disabled):active,
+[role="button"]:active {
+  scale: 0.97;
+}
+
+/* Sliders: themed track, springy thumb */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 1.75rem;
+  background: transparent;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--color-zinc-700);
+}
+input[type="range"]::-moz-range-track {
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--color-zinc-700);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -8px;
+  height: 22px;
+  width: 22px;
+  border-radius: 9999px;
+  border: 3px solid var(--color-zinc-900);
+  background: var(--color-amber-400);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  transition: scale 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+input[type="range"]::-moz-range-thumb {
+  height: 16px;
+  width: 16px;
+  border-radius: 9999px;
+  border: 3px solid var(--color-zinc-900);
+  background: var(--color-amber-400);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  transition: scale 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+input[type="range"]:active::-webkit-slider-thumb {
+  scale: 1.18;
+}
+input[type="range"]:active::-moz-range-thumb {
+  scale: 1.18;
+}
+input[type="range"]:focus-visible {
+  outline: none;
+}
+input[type="range"]:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-amber-400) 40%, transparent);
+}
+
+/* Theme sheet slides up with a soft spring */
+.theme-sheet {
+  animation: sheet-in 280ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+@keyframes sheet-in {
+  from {
+    translate: 0 24px;
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button:not(:disabled):active,
+  [role="button"]:active {
+    scale: none;
+  }
+  .theme-sheet {
+    animation: none;
+  }
 }
 
 /* Hide number input spinners — values are typed on a phone keypad */

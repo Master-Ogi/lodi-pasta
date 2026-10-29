@@ -10,6 +10,7 @@ import type {
   RecipeId,
   RecipeText,
   SafetyWarning,
+  ThemeId,
   Unit,
 } from '../types';
 
@@ -29,6 +30,14 @@ export interface Dictionary {
     wakeOn: string;
     wakeOff: string;
     language: string;
+  };
+
+  theme: {
+    title: string;
+    open: string;
+    close: string;
+    names: Record<ThemeId, string>;
+    blurbs: Record<ThemeId, string>;
   };
 
   calc: {

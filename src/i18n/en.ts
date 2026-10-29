@@ -30,6 +30,26 @@ export const en: Dictionary = {
     language: 'Language',
   },
 
+  theme: {
+    title: 'Theme',
+    open: 'Choose theme',
+    close: 'Close',
+    names: {
+      'classic-dark': 'Classic Dark',
+      'bottega-carta': 'Bottega Carta',
+      'trattoria-quadri': 'Trattoria Quadri',
+      'linear-obsidian': 'Linear Obsidian',
+      'cucina-mediterranea': 'Cucina Mediterranea',
+    },
+    blurbs: {
+      'classic-dark': 'Zinc night kitchen with amber accents',
+      'bottega-carta': 'Flour parchment, espresso ink, terracotta',
+      'trattoria-quadri': 'Bistro cream, gingham red, olive herbs',
+      'linear-obsidian': 'Obsidian glass, hairlines, yellow signal',
+      'cucina-mediterranea': 'Soft sage, unbleached linen, terracotta',
+    },
+  },
+
   calc: {
     servings: 'Servings',
     adults: 'Adults',

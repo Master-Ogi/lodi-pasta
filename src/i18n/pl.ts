@@ -30,6 +30,26 @@ export const pl: Dictionary = {
     language: 'Język',
   },
 
+  theme: {
+    title: 'Motyw',
+    open: 'Wybierz motyw',
+    close: 'Zamknij',
+    names: {
+      'classic-dark': 'Klasyczny ciemny',
+      'bottega-carta': 'Bottega Carta',
+      'trattoria-quadri': 'Trattoria w kratkę',
+      'linear-obsidian': 'Obsydian minimal',
+      'cucina-mediterranea': 'Kuchnia śródziemnomorska',
+    },
+    blurbs: {
+      'classic-dark': 'Nocna kuchnia w cynku z bursztynem',
+      'bottega-carta': 'Mączny pergamin, espresso i terakota',
+      'trattoria-quadri': 'Bistro krem, czerwona kratka, oliwkowe zioła',
+      'linear-obsidian': 'Obsydianowe szkło, cienkie linie, żółty sygnał',
+      'cucina-mediterranea': 'Miękka szałwia, naturalny len, terakota',
+    },
+  },
+
   calc: {
     servings: 'Porcje',
     adults: 'Dorośli',
